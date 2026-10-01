@@ -7,7 +7,7 @@
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
 body{
-  background:radial-gradient(1200px 600px at 80% -10%,#1a2140 0,transparent 60%),var(--bg);
+  background:var(--bg);
   color:var(--text);
   font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Segoe UI",sans-serif;
   overflow-x:hidden;
@@ -21,7 +21,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .brand{font-weight:700;letter-spacing:.02em;font-size:18px}
 .actions{display:flex;gap:8px}
 .btn{
-  background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0b0d12;border:0;
+  background:var(--accent);color:#0b0d12;border:0;
   padding:8px 14px;border-radius:10px;font-weight:600;transition:.15s;
 }
 .btn:hover{filter:brightness(1.1);transform:translateY(-1px)}
@@ -54,7 +54,6 @@ button{font:inherit;color:inherit;cursor:pointer}
   position:absolute;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
   box-shadow:0 10px 30px rgba(0,0,0,.35);display:flex;flex-direction:column;overflow:hidden;
 }
-.widget.dragging{box-shadow:0 20px 60px rgba(110,168,254,.25);border-color:var(--accent);opacity:.95}
 .w-head{
   display:flex;align-items:center;gap:8px;padding:8px 8px 8px 14px;cursor:grab;user-select:none;touch-action:none;
   background:var(--bg2);border-bottom:1px solid var(--line);font-size:13px;color:var(--muted);
@@ -81,24 +80,26 @@ button{font:inherit;color:inherit;cursor:pointer}
   flex:1;min-width:0;padding:10px 0;border-radius:12px;border:1px solid var(--line);background:var(--panel2);font-weight:600;font-size:15px;
 }
 .ctl:hover{border-color:var(--accent)}
-.ctl.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0b0d12;border:0}
+.ctl.primary{background:var(--accent);color:#0b0d12;border:0}
 .ctl:disabled{opacity:.4;cursor:not-allowed}
 .time{font-variant-numeric:tabular-nums;font-weight:700;letter-spacing:.02em;text-align:center}
 
 /* timer */
-.ring-wrap{position:relative;width:180px;height:180px;margin:0 auto 12px}
+.ring-wrap{position:relative;width:260px;height:260px;margin:0 auto 16px}
 .ring-wrap svg{width:100%;height:100%;transform:rotate(-90deg)}
 .ring-bg{fill:none;stroke:var(--panel2);stroke-width:10}
-.ring-fg{fill:none;stroke:url(#g);stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset .2s linear}
+.ring-fg{fill:none;stroke:var(--accent);stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset .2s linear}
 .ring-center{position:absolute;inset:0;display:grid;place-items:center;align-content:center}
-.ring-center .time{font-size:34px}
-.t-inputs{display:flex;gap:4px;align-items:center;justify-content:center}
+.ring-center .time{font-size:44px}
+.t-inputs{display:flex;gap:6px;align-items:flex-end;justify-content:center}
+.t-inputs label{display:flex;flex-direction:column;align-items:center;gap:2px}
+.t-inputs label small{color:var(--muted);font-size:11px}
 .t-inputs input{
-  width:52px;text-align:center;font-size:30px;font-weight:700;color:var(--text);background:transparent;border:0;border-bottom:2px solid var(--line);
+  width:48px;text-align:center;font-size:30px;font-weight:700;color:var(--text);background:transparent;border:0;border-bottom:2px solid var(--line);
   font-variant-numeric:tabular-nums;outline:0;padding:0;
 }
 .t-inputs input:focus{border-color:var(--accent)}
-.t-inputs span{color:var(--muted);font-size:12px}
+.t-inputs .sep{color:var(--muted);font-size:24px;padding-bottom:2px}
 .finished{animation:flash .8s ease-in-out infinite}
 @keyframes flash{50%{border-color:var(--danger);box-shadow:0 0 40px rgba(248,113,113,.5)}}
 

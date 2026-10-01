@@ -16,22 +16,19 @@
   }
 
   Toolbox.register({
-    type:'timer', title:'タイマー', icon:'⏳', desc:'カウントダウン＋終了アラーム', w:280,
+    type:'timer', title:'タイマー', icon:'⏳', desc:'カウントダウン＋終了アラーム', w:320,
     create(root, st, api){
       const C = 2*Math.PI*80;
       root.innerHTML = `
         <div class="ring-wrap">
-          <svg viewBox="0 0 180 180"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6ea8fe"/><stop offset="1" stop-color="#a78bfa"/></linearGradient></defs>
+          <svg viewBox="0 0 180 180">
             <circle class="ring-bg" cx="90" cy="90" r="80"/><circle class="ring-fg" cx="90" cy="90" r="80" stroke-dasharray="${C}" stroke-dashoffset="0"/></svg>
           <div class="ring-center">
             <div class="t-inputs">
-              <input data-k="h" inputmode="numeric" maxlength="2"><span>:</span><input data-k="m" inputmode="numeric" maxlength="2"><span>:</span><input data-k="s" inputmode="numeric" maxlength="2">
+              <label><small>時</small><input data-k="h" inputmode="numeric" maxlength="2"></label><span class="sep">:</span><label><small>分</small><input data-k="m" inputmode="numeric" maxlength="2"></label><span class="sep">:</span><label><small>秒</small><input data-k="s" inputmode="numeric" maxlength="2"></label>
             </div>
             <div class="time" data-r hidden></div>
           </div>
-        </div>
-        <div class="row" style="margin-bottom:12px">
-          ${[1,3,5,10,25].map(m=>`<button class="pill" data-p="${m}">${m}分</button>`).join('')}
         </div>
         <div class="row"><button class="ctl primary" data-go>スタート</button><button class="ctl" data-reset>リセット</button></div>`;
       const q = s => root.querySelector(s);
@@ -50,7 +47,7 @@
       function render(){
         const r = running() ? Math.max(0,(endAt-Date.now())/1000) : left;
         const show = running() || left !== total || done;
-        readout.hidden = !show; Object.values(inp).forEach(i=>i.parentElement.hidden = show);
+        readout.hidden = !show; Object.values(inp).forEach(i=>i.closest('.t-inputs').hidden = show);
         readout.textContent = fmt(r);
         fg.style.strokeDashoffset = C * (1 - (total ? r/total : 0));
         go.textContent = running() ? '一時停止' : (left<total && left>0 ? '再開' : 'スタート');
@@ -81,7 +78,6 @@
       }
 
       go.onclick = start; q('[data-reset]').onclick = reset;
-      root.querySelectorAll('[data-p]').forEach(b => b.onclick = () => { clearAlert(); endAt=0; clearInterval(timer); timer=null; total=left=b.dataset.p*60; setInputs(total); save(); render(); });
       Object.values(inp).forEach(i => {
         i.onfocus = () => i.select();
         i.oninput = () => { i.value = i.value.replace(/\D/g,''); total = left = (+inp.h.value||0)*3600 + (+inp.m.value||0)*60 + (+inp.s.value||0); save(); };
