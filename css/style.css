@@ -10,7 +10,7 @@ body{
   background:var(--bg);
   color:var(--text);
   font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Segoe UI",sans-serif;
-  overflow-x:hidden;
+  overflow:auto;
 }
 [hidden]{display:none!important}
 button{font:inherit;color:inherit;cursor:pointer}
@@ -117,12 +117,6 @@ button{font:inherit;color:inherit;cursor:pointer}
 .widget.full .sw-time{font-size:min(18vh,14vw)}
 .widget.full .row,.widget.full .laps{width:min(560px,100%)}
 
-@media(max-width:700px){
-  .board{display:grid;gap:14px;padding:14px}
-  .widget{position:relative!important;left:auto!important;top:auto!important;width:auto!important;height:auto!important}
-  .w-head{cursor:default}
-  .palette{left:12px;right:12px;width:auto}
-}
 
 /* ListTimer */
 .lt-body{padding:0}

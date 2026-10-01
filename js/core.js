@@ -102,7 +102,7 @@
 
   function enableDrag(item, el, handle){
     handle.addEventListener('pointerdown', e => {
-      if(e.target.closest('button') || el.classList.contains('full') || innerWidth <= 700) return;
+      if(e.target.closest('button') || el.classList.contains('full')) return;
       const sx = e.clientX, sy = e.clientY, ox = item.x, oy = item.y;
       handle.setPointerCapture(e.pointerId);
       el.classList.add('dragging');
