@@ -35,6 +35,10 @@
       buildPalette();
       refreshEmpty();
       $('#toggle-palette').onclick = () => { const p=$('#palette'); p.hidden = !p.hidden; };
+      document.addEventListener('pointerdown', e => {
+        const p = $('#palette');
+        if(!p.hidden && !e.target.closest('#palette, #toggle-palette')) p.hidden = true;
+      });
       $('#tidy').onclick = tidy;
       $('#clear').onclick = () => { if(items.length && confirm('すべてのウィジェットを削除しますか？')) [...items].forEach(i=>remove(i.id)); };
       document.addEventListener('keydown', e => { if(e.key==='Escape') document.querySelectorAll('.widget.full').forEach(w=>w.classList.remove('full')); });
