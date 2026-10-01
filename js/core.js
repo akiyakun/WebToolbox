@@ -14,6 +14,18 @@
   const Toolbox = {
     register(def){ types[def.type] = def; },
 
+    beep(){
+      try {
+        const ac = new (window.AudioContext||window.webkitAudioContext)();
+        [0,.25,.5].forEach(t => {
+          const o = ac.createOscillator(), g = ac.createGain();
+          o.frequency.value = 880; o.connect(g); g.connect(ac.destination);
+          g.gain.setValueAtTime(.2, ac.currentTime+t); g.gain.exponentialRampToValueAtTime(.001, ac.currentTime+t+.2);
+          o.start(ac.currentTime+t); o.stop(ac.currentTime+t+.22);
+        });
+      } catch(e){}
+    },
+
     start(){
       board = $('#board');
       try { items = JSON.parse(localStorage.getItem(KEY)) || []; } catch(e){ items = []; }
@@ -62,7 +74,7 @@
     const t = types[item.type];
     const el = document.createElement('section');
     el.className = 'widget';
-    el.style.cssText = `left:${item.x}px;top:${item.y}px;width:${t.w||280}px;z-index:${item.z||1}`;
+    el.style.cssText = `left:${item.x}px;top:${item.y}px;width:${t.w||280}px;${t.h?`height:${t.h}px;`:''}z-index:${item.z||1}`;
     el.innerHTML = `
       <div class="w-head"><span>${t.icon}</span><span class="w-title">${t.title}</span>
         <button class="w-btn" data-a="full" title="拡大表示">⛶</button>
