@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WebToolbox</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="logo">🧰</span> WebToolbox</div>
+  <div class="actions">
+    <button id="toggle-palette" class="btn">＋ ツールを追加</button>
+    <button id="tidy" class="btn ghost" title="ウィジェットを整列">整列</button>
+    <button id="clear" class="btn ghost danger" title="すべて削除">全削除</button>
+  </div>
+</header>
+
+<aside id="palette" class="palette" hidden>
+  <h2>ツール一覧</h2>
+  <div id="palette-list" class="palette-list"></div>
+  <p class="hint">クリックでボードに追加。同じツールを複数置けます。ヘッダーをドラッグで移動、位置は自動保存されます。</p>
+</aside>
+
+<main id="board" class="board">
+  <div id="empty" class="empty" hidden>
+    <p>ボードは空です。<br>「＋ ツールを追加」からウィジェットを置いてみましょう。</p>
+  </div>
+</main>
+
+<script src="js/core.js"></script>
+<script src="js/widgets/timer.js"></script>
+<script src="js/widgets/stopwatch.js"></script>
+<script>Toolbox.start();</script>
+</body>
+</html>
