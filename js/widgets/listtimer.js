@@ -45,7 +45,7 @@
         const r = endAt ? Math.max(0,(endAt-Date.now())/1000) : paused;
         q('[data-r]').textContent = left(r);
         q('.ring-fg').style.strokeDashoffset = C * (1 - r/total);
-        q('[data-end]').textContent = clock(endAt ? endAt : Date.now()+paused*1000);
+        if(!done) q('[data-end]').textContent = clock(endAt ? endAt : Date.now()+paused*1000);
         q('[data-pause]').textContent = done ? 'OK' : (endAt ? '一時停止' : '再開');
         if(endAt && r <= 0) finish();
       }
@@ -55,11 +55,11 @@
       }
       function finish(){
         endAt = 0; paused = 0; done = true; Toolbox.beep(); box.classList.add('finished');
-        document.title = '⏰ 終了！ - WebToolbox'; stopTick(); renderRun();
+        document.title = '⏰ 終了！ - WebToolbox'; renderRun();
       }
       function clearAlert(){ done = false; box.classList.remove('finished'); document.title = 'WebToolbox'; }
       function stopTick(){ clearInterval(tick); tick = null; }
-      function startTick(){ stopTick(); tick = setInterval(() => active() ? renderRun() : updateClocks(), 1000); }
+      function startTick(){ stopTick(); tick = setInterval(() => active() ? renderRun() : updateClocks(), 250); }
       function cancel(){ clearAlert(); total = endAt = paused = 0; save(); show(); }
 
       q('[data-list]').onclick = e => {
