@@ -8,7 +8,7 @@
   const plain = ms => fmt(ms).replace(/<[^>]+>/g,'');
 
   Toolbox.register({
-    type:'stopwatch', title:'ストップウォッチ', icon:'⏱️', desc:'ラップ記録つき', w:250,
+    type:'stopwatch', title:'ストップウォッチ', icon:'⏱️', desc:'ラップ記録つき', w:250, h:379,
     create(root, st, api){
       root.innerHTML = `
         <div class="time sw-time" data-t></div>

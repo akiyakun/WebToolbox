@@ -134,7 +134,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 /* stopwatch */
 .sw-time{font-size:42px;margin:3px 0 7px}
 .sw-time small{font-size:.55em;color:var(--muted)}
-.laps{margin-top:6px;overflow:auto;flex:1;min-height:0;font-size:14px;font-variant-numeric:tabular-nums}
+.laps{margin-top:6px;overflow:auto;overscroll-behavior:contain;flex:1;min-height:0;font-size:14px;font-variant-numeric:tabular-nums}
 .lap{display:flex;justify-content:space-between;padding:6px 4px;border-bottom:1px solid var(--line);color:var(--muted)}
 .lap b{color:var(--text);font-weight:600}
 .lap.best b{color:var(--ok)} .lap.worst b{color:var(--danger)}
