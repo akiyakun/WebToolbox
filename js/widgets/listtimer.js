@@ -7,7 +7,7 @@
   const UNITS = [1,3,5], COUNT = 60;
 
   Toolbox.register({
-    type:'listtimer', title:'ListTimer', icon:'📋', desc:'一覧から選んでワンタップでスタート', w:270, h:407,
+    type:'listtimer', title:'ListTimer', icon:'📋', desc:'一覧から選んでワンタップでスタート', w:250, h:379,
     create(root, st, api){
       root.classList.add('lt-body');
       const C = 2*Math.PI*80;

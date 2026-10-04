@@ -11,8 +11,6 @@
   <div class="brand"><span class="logo">🧰</span> WebToolbox</div>
   <div class="actions">
     <button id="toggle-palette" class="btn">＋ ツールを追加</button>
-    <button id="tidy" class="btn ghost" title="ウィジェットを整列">整列</button>
-    <button id="clear" class="btn ghost danger" title="すべて削除">全削除</button>
     <button id="toggle-settings" class="btn ghost" title="設定">⚙</button>
   </div>
 </header>
@@ -47,6 +45,14 @@
     <div class="setting-sub">
       <input type="range" id="set-scale" class="range" min="50" max="150" step="5" value="100">
       <button id="scale-reset" class="pill">100%</button>
+    </div>
+  </div>
+
+  <div class="setting setting-col">
+    <span><b>ボード</b><small>ウィジェットの整理</small></span>
+    <div class="setting-actions">
+      <button id="tidy" class="ctl" title="ウィジェットを整列">整列</button>
+      <button id="clear" class="ctl danger" title="すべて削除">全削除</button>
     </div>
   </div>
 </aside>

@@ -2,7 +2,7 @@
   --bg:#0b0d12; --bg2:#12151c; --panel:#161a23; --panel2:#1d2230;
   --line:#272d3d; --text:#e8ecf4; --muted:#8892a8;
   --accent:#6ea8fe; --accent2:#a78bfa; --ok:#4ade80; --warn:#fbbf24; --danger:#f87171;
-  --radius:16px; --grid:20px;
+  --radius:16px; --grid:20px; --topbar-h:54px;
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;overscroll-behavior:none}
@@ -16,39 +16,39 @@ body{
 button{font:inherit;color:inherit;cursor:pointer}
 .topbar{
   position:sticky;top:0;z-index:10000;display:flex;justify-content:space-between;align-items:center;
-  padding:12px 20px;background:rgba(11,13,18,.8);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);
+  height:var(--topbar-h);padding:0 20px;background:rgba(11,13,18,.8);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);
 }
 .brand{font-weight:700;letter-spacing:.02em;font-size:18px}
 .actions{display:flex;gap:8px}
 .btn{
   background:var(--accent);color:#0b0d12;border:0;
-  padding:8px 14px;border-radius:10px;font-weight:600;transition:.15s;
+  padding:4px 7px;border-radius:10px;font-weight:600;transition:.15s;
 }
 .btn:hover{filter:brightness(1.1);transform:translateY(-1px)}
 .btn.ghost{background:var(--panel2);color:var(--text);border:1px solid var(--line)}
 .btn.danger:hover{color:var(--danger);border-color:var(--danger)}
 
 .palette{
-  position:fixed;top:58px;right:16px;width:300px;z-index:10001;
+  position:fixed;top:calc(var(--topbar-h) + 6px);right:16px;width:300px;z-index:10001;
   background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
-  padding:16px;box-shadow:0 20px 50px rgba(0,0,0,.5);
+  padding:8px;box-shadow:0 20px 50px rgba(0,0,0,.5);
 }
 .palette[hidden]{display:none}
 /* Settings is shown at 100% regardless of UI scale; keep it under the scaled topbar. */
-#settings{top:calc(58px * var(--ui-scale, 1))}
-.palette h2{margin:0 0 12px;font-size:14px;color:var(--muted);font-weight:600}
+#settings{top:calc((var(--topbar-h) + 6px) * var(--ui-scale, 1))}
+.palette h2{margin:2px 4px 8px;font-size:14px;color:var(--muted);font-weight:600}
 .palette-list{display:grid;gap:8px}
 .tool{
   display:flex;gap:12px;align-items:center;text-align:left;width:100%;
-  background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px;transition:.15s;
+  background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:6px;transition:.15s;
 }
 .tool:hover{border-color:var(--accent);transform:translateX(-2px)}
 .tool .ic{font-size:26px}
 .tool b{display:block;font-size:15px}
 .tool small{color:var(--muted)}
-.hint{font-size:12px;color:var(--muted);margin:12px 0 0;line-height:1.6}
+.hint{font-size:12px;color:var(--muted);margin:6px 4px 0;line-height:1.6}
 
-.board{position:relative;min-height:calc(100vh - 58px);padding:20px}
+.board{position:relative;min-height:calc(100vh - var(--topbar-h));padding:20px}
 .empty{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);text-align:center;line-height:1.8;pointer-events:none}
 .empty[hidden]{display:none}
 
@@ -57,23 +57,23 @@ button{font:inherit;color:inherit;cursor:pointer}
   box-shadow:0 10px 30px rgba(0,0,0,.35);display:flex;flex-direction:column;overflow:hidden;
 }
 .w-head{
-  display:flex;align-items:center;gap:8px;padding:8px 8px 8px 14px;cursor:grab;user-select:none;touch-action:none;
+  display:flex;align-items:center;gap:6px;height:36px;padding:0 4px 0 8px;cursor:grab;user-select:none;touch-action:none;
   background:var(--bg2);border-bottom:1px solid var(--line);font-size:13px;color:var(--muted);
 }
 .dragging .w-head{cursor:grabbing}
 .w-title{flex:1;font-weight:600}
-.w-btn{background:transparent;border:0;border-radius:8px;width:28px;height:28px;color:var(--muted)}
+.w-btn{background:transparent;border:0;border-radius:6px;width:26px;height:26px;padding:0;color:var(--muted)}
 .w-btn:hover{background:var(--panel2);color:var(--text)}
-.w-body{padding:16px;flex:1;display:flex;flex-direction:column;min-height:0}
+.w-body{padding:8px;flex:1;display:flex;flex-direction:column;min-height:0}
 
 .widget.full{
-  position:fixed!important;inset:58px 0 0 0!important;width:auto!important;height:auto!important;
+  position:fixed!important;inset:var(--topbar-h) 0 0 0!important;width:auto!important;height:auto!important;
   border-radius:0;z-index:9999!important;
 }
 .widget.full .w-head{cursor:default}
 
 /* settings */
-.setting{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px;cursor:pointer}
+.setting{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:6px;cursor:pointer}
 .setting b{display:block;font-size:15px}
 .setting small{color:var(--muted)}
 .switch{appearance:none;flex:none;width:40px;height:24px;border-radius:999px;background:var(--line);position:relative;cursor:pointer;margin:0;transition:.15s}
@@ -81,7 +81,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .switch:checked{background:var(--accent)}
 .switch:checked::after{left:19px;background:#0b0d12}
 
-.setting-col{display:block;margin-top:12px;cursor:default}
+.setting-col{display:block;margin-top:6px;cursor:default}
 .setting-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .stepper{display:flex;align-items:center;gap:6px;flex:none}
 .stepper output{font-variant-numeric:tabular-nums;font-weight:700;min-width:48px;text-align:center}
@@ -90,17 +90,20 @@ button{font:inherit;color:inherit;cursor:pointer}
 .step-btn:disabled{opacity:.4;cursor:not-allowed}
 .range{flex:1;accent-color:var(--accent);margin:0;cursor:pointer}
 
+.setting-actions{display:flex;gap:6px;margin-top:6px}
+.ctl.danger:hover{border-color:var(--danger);color:var(--danger)}
+
 /* shared controls */
-.setting-sub{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;font-size:12px;color:var(--muted)}
+.setting-sub{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:5px;font-size:12px;color:var(--muted)}
 .setting-sub .pill{white-space:nowrap;flex:none}
 .pill:disabled{opacity:.4;cursor:not-allowed}
-.row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.row{display:flex;gap:4px;justify-content:center;flex-wrap:wrap}
 .pill{
-  background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:999px;padding:6px 12px;font-size:13px;
+  background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:999px;padding:3px 6px;font-size:13px;
 }
 .pill:hover{border-color:var(--accent)}
 .ctl{
-  flex:1;min-width:0;padding:10px 0;border-radius:12px;border:1px solid var(--line);background:var(--panel2);font-weight:600;font-size:15px;
+  flex:1;min-width:0;padding:5px 0;border-radius:12px;border:1px solid var(--line);background:var(--panel2);font-weight:600;font-size:15px;
 }
 .ctl:hover{border-color:var(--accent)}
 .ctl.primary{background:var(--accent);color:#0b0d12;border:0}
@@ -108,7 +111,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .time{font-variant-numeric:tabular-nums;font-weight:700;letter-spacing:.02em;text-align:center}
 
 /* timer */
-.ring-wrap{position:relative;width:220px;height:220px;margin:0 auto 16px}
+.ring-wrap{position:relative;width:220px;height:220px;margin:0 auto 8px}
 .ring-wrap svg{width:100%;height:100%;transform:rotate(-90deg)}
 .ring-bg{fill:none;stroke:var(--panel2);stroke-width:10}
 .ring-fg{fill:none;stroke:var(--accent);stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset .2s linear}
@@ -128,9 +131,9 @@ button{font:inherit;color:inherit;cursor:pointer}
 @keyframes flash{0%,100%{border-color:var(--danger);box-shadow:0 0 40px rgba(248,113,113,.5)}50%{border-color:var(--line);box-shadow:0 10px 30px rgba(0,0,0,.35)}}
 
 /* stopwatch */
-.sw-time{font-size:42px;margin:6px 0 14px}
+.sw-time{font-size:42px;margin:3px 0 7px}
 .sw-time small{font-size:.55em;color:var(--muted)}
-.laps{margin-top:12px;overflow:auto;flex:1;min-height:0;font-size:14px;font-variant-numeric:tabular-nums}
+.laps{margin-top:6px;overflow:auto;flex:1;min-height:0;font-size:14px;font-variant-numeric:tabular-nums}
 .lap{display:flex;justify-content:space-between;padding:6px 4px;border-bottom:1px solid var(--line);color:var(--muted)}
 .lap b{color:var(--text);font-weight:600}
 .lap.best b{color:var(--ok)} .lap.worst b{color:var(--danger)}
@@ -144,10 +147,10 @@ button{font:inherit;color:inherit;cursor:pointer}
 
 /* ListTimer */
 .lt-body{padding:0}
-.lt-tabs{display:flex;gap:4px;margin:12px;padding:4px;background:var(--bg2);border-radius:12px}
-.lt-tab{flex:1;border:0;background:transparent;color:var(--muted);padding:7px 0;border-radius:9px;font-size:13px;font-weight:600}
+.lt-tabs{display:flex;gap:4px;margin:6px;padding:4px;background:var(--bg2);border-radius:12px}
+.lt-tab{flex:1;border:0;background:transparent;color:var(--muted);padding:3.5px 0;border-radius:9px;font-size:13px;font-weight:600}
 .lt-tab.on{background:var(--accent);color:#0b0d12}
-.lt-list{overscroll-behavior:contain;flex:1;min-height:0;overflow-y:auto;padding:0 12px 12px}
+.lt-list{overscroll-behavior:contain;flex:1;min-height:0;overflow-y:auto;padding:0 6px 6px}
 .lt-row{
   display:flex;align-items:center;justify-content:space-between;width:100%;background:transparent;border:0;border-bottom:1px solid var(--line);
   padding:10px 8px;font-variant-numeric:tabular-nums;
@@ -155,7 +158,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .lt-row:hover{background:var(--panel2)}
 .lt-row .d{font-size:24px;font-weight:600}
 .lt-row .e{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 10px}
-.lt-run{flex:1;display:flex;flex-direction:column;justify-content:center;gap:16px;padding:16px}
+.lt-run{flex:1;display:flex;flex-direction:column;justify-content:center;gap:8px;padding:8px}
 .lt-run .ring-wrap{margin:0 auto}
 .ring-center .time.long{font-size:34px}
 .lt-end{font-size:12px;color:var(--muted);text-align:center;margin-top:4px}

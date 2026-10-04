@@ -16,7 +16,7 @@
   }
 
   Toolbox.register({
-    type:'timer', title:'タイマー', icon:'⏳', desc:'カウントダウン＋終了アラーム', w:270,
+    type:'timer', title:'タイマー', icon:'⏳', desc:'カウントダウン＋終了アラーム', w:250,
     create(root, st, api){
       const C = 2*Math.PI*80;
       root.innerHTML = `
