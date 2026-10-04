@@ -37,11 +37,15 @@
 
   <div class="setting setting-col">
     <div class="setting-head">
-      <span><b>UIのスケール</b><small>画面全体の表示サイズ</small></span>
-      <output id="scale-val">100%</output>
+      <span><b>UIのスケール</b><small>画面全体の大きさ</small></span>
+      <div class="stepper">
+        <button id="scale-down" class="step-btn" title="5%小さく">−</button>
+        <output id="scale-val">100%</output>
+        <button id="scale-up" class="step-btn" title="5%大きく">＋</button>
+      </div>
     </div>
     <div class="setting-sub">
-      <input type="range" id="set-scale" class="range" min="50" max="150" step="10" value="100">
+      <input type="range" id="set-scale" class="range" min="50" max="150" step="5" value="100">
       <button id="scale-reset" class="pill">100%</button>
     </div>
   </div>

@@ -7,7 +7,7 @@
   const UNITS = [1,3,5], COUNT = 60;
 
   Toolbox.register({
-    type:'listtimer', title:'ListTimer', icon:'📋', desc:'一覧から選んでワンタップでスタート', w:320, h:407,
+    type:'listtimer', title:'ListTimer', icon:'📋', desc:'一覧から選んでワンタップでスタート', w:270, h:407,
     create(root, st, api){
       root.classList.add('lt-body');
       const C = 2*Math.PI*80;
@@ -43,7 +43,7 @@
       }
       function renderRun(){
         const r = endAt ? Math.max(0,(endAt-Date.now())/1000) : paused;
-        q('[data-r]').textContent = left(r);
+        q('[data-r]').textContent = left(r); q('[data-r]').classList.toggle('long', r > 3599);
         q('.ring-fg').style.strokeDashoffset = C * (1 - r/total);
         if(!done) q('[data-end]').textContent = clock(endAt ? endAt : Date.now()+paused*1000);
         q('[data-pause]').textContent = done ? 'OK' : (endAt ? '一時停止' : '再開');

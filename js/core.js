@@ -88,7 +88,7 @@
 
     const range = $('#set-scale'), val = $('#scale-val');
     const applyScale = pct => {
-      pct = Math.min(150, Math.max(50, Math.round((+pct || 100) / 10) * 10));
+      pct = Math.min(150, Math.max(50, Math.round((+pct || 100) / 5) * 5));
       scale = pct / 100;
       document.body.style.zoom = pct === 100 ? '' : scale;
       // Cancel the zoom on the settings panel so the slider doesn't move under the cursor while dragging.
@@ -96,12 +96,15 @@
       // Only reposition under the topbar while closed, so the open panel never moves under the cursor.
       if($('#settings').hidden) document.documentElement.style.setProperty('--ui-scale', scale);
       range.value = pct; val.textContent = pct + '%';
+      $('#scale-down').disabled = pct <= 50; $('#scale-up').disabled = pct >= 150;
       settings.scale = pct;
     };
     applyScale(settings.scale);
     range.oninput = () => applyScale(range.value);
     range.onchange = saveSettings;
     $('#toggle-settings').addEventListener('click', () => document.documentElement.style.setProperty('--ui-scale', scale));
+    $('#scale-down').onclick = () => { applyScale(scale * 100 - 5); saveSettings(); };
+    $('#scale-up').onclick = () => { applyScale(scale * 100 + 5); saveSettings(); };
     $('#scale-reset').onclick = () => { applyScale(100); saveSettings(); };
 
     box.onchange = async () => {

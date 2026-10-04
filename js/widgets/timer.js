@@ -16,7 +16,7 @@
   }
 
   Toolbox.register({
-    type:'timer', title:'タイマー', icon:'⏳', desc:'カウントダウン＋終了アラーム', w:320,
+    type:'timer', title:'タイマー', icon:'⏳', desc:'カウントダウン＋終了アラーム', w:270,
     create(root, st, api){
       const C = 2*Math.PI*80;
       root.innerHTML = `
@@ -48,7 +48,7 @@
         const r = running() ? Math.max(0,(endAt-Date.now())/1000) : left;
         const show = running() || left !== total || done;
         readout.hidden = !show; Object.values(inp).forEach(i=>i.closest('.t-inputs').hidden = show);
-        readout.textContent = fmt(r);
+        readout.textContent = fmt(r); readout.classList.toggle('long', r > 3599);
         fg.style.strokeDashoffset = C * (1 - (total ? r/total : 0));
         go.textContent = running() ? '一時停止' : (left<total && left>0 ? '再開' : 'スタート');
         if(running() && r <= 0) finish();

@@ -83,7 +83,11 @@ button{font:inherit;color:inherit;cursor:pointer}
 
 .setting-col{display:block;margin-top:12px;cursor:default}
 .setting-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.setting-head output{font-variant-numeric:tabular-nums;font-weight:700;min-width:48px;text-align:right}
+.stepper{display:flex;align-items:center;gap:6px;flex:none}
+.stepper output{font-variant-numeric:tabular-nums;font-weight:700;min-width:48px;text-align:center}
+.step-btn{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--bg2);font-size:16px;line-height:1;padding:0}
+.step-btn:hover{border-color:var(--accent)}
+.step-btn:disabled{opacity:.4;cursor:not-allowed}
 .range{flex:1;accent-color:var(--accent);margin:0;cursor:pointer}
 
 /* shared controls */
@@ -104,17 +108,18 @@ button{font:inherit;color:inherit;cursor:pointer}
 .time{font-variant-numeric:tabular-nums;font-weight:700;letter-spacing:.02em;text-align:center}
 
 /* timer */
-.ring-wrap{position:relative;width:260px;height:260px;margin:0 auto 16px}
+.ring-wrap{position:relative;width:220px;height:220px;margin:0 auto 16px}
 .ring-wrap svg{width:100%;height:100%;transform:rotate(-90deg)}
 .ring-bg{fill:none;stroke:var(--panel2);stroke-width:10}
 .ring-fg{fill:none;stroke:var(--accent);stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset .2s linear}
 .ring-center{position:absolute;inset:0;display:grid;place-items:center;align-content:center}
 .ring-center .time{font-size:44px}
-.t-inputs{display:flex;gap:6px;align-items:flex-end;justify-content:center}
+.ring-center .time.long{font-size:34px}
+.t-inputs{display:flex;gap:4px;align-items:flex-end;justify-content:center}
 .t-inputs label{display:flex;flex-direction:column;align-items:center;gap:2px}
 .t-inputs label small{color:var(--muted);font-size:11px}
 .t-inputs input{
-  width:48px;text-align:center;font-size:30px;font-weight:700;color:var(--text);background:transparent;border:0;border-bottom:2px solid var(--line);
+  width:40px;text-align:center;font-size:26px;font-weight:700;color:var(--text);background:transparent;border:0;border-bottom:2px solid var(--line);
   font-variant-numeric:tabular-nums;outline:0;padding:0;
 }
 .t-inputs input:focus{border-color:var(--accent)}
@@ -123,7 +128,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 @keyframes flash{0%,100%{border-color:var(--danger);box-shadow:0 0 40px rgba(248,113,113,.5)}50%{border-color:var(--line);box-shadow:0 10px 30px rgba(0,0,0,.35)}}
 
 /* stopwatch */
-.sw-time{font-size:46px;margin:6px 0 14px}
+.sw-time{font-size:42px;margin:6px 0 14px}
 .sw-time small{font-size:.55em;color:var(--muted)}
 .laps{margin-top:12px;overflow:auto;flex:1;min-height:0;font-size:14px;font-variant-numeric:tabular-nums}
 .lap{display:flex;justify-content:space-between;padding:6px 4px;border-bottom:1px solid var(--line);color:var(--muted)}
@@ -152,6 +157,6 @@ button{font:inherit;color:inherit;cursor:pointer}
 .lt-row .e{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 10px}
 .lt-run{flex:1;display:flex;flex-direction:column;justify-content:center;gap:16px;padding:16px}
 .lt-run .ring-wrap{margin:0 auto}
-.lt-run .ring-center .time{font-size:44px}
+.ring-center .time.long{font-size:34px}
 .lt-end{font-size:12px;color:var(--muted);text-align:center;margin-top:4px}
 .lt-end b{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:2px 10px;color:var(--text);font-weight:500;margin-left:4px}
