@@ -34,6 +34,8 @@ button{font:inherit;color:inherit;cursor:pointer}
   padding:16px;box-shadow:0 20px 50px rgba(0,0,0,.5);
 }
 .palette[hidden]{display:none}
+/* Settings is shown at 100% regardless of UI scale; keep it under the scaled topbar. */
+#settings{top:calc(58px * var(--ui-scale, 1))}
 .palette h2{margin:0 0 12px;font-size:14px;color:var(--muted);font-weight:600}
 .palette-list{display:grid;gap:8px}
 .tool{
