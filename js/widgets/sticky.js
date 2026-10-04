@@ -34,7 +34,8 @@
           action: () => { color = c.key; render(); save(); } }))],
         // Clicking the note without dragging starts typing at the end of the text.
         tap(){ ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); },
-        closeWarning: () => ta.value.trim() ? '付箋に入力された内容があります。\n閉じると内容は削除されます。閉じますか？' : '',
+        // Checked (done) notes close without asking; unchecked ones with text ask first.
+        closeWarning: () => !done && ta.value.trim() ? 'この付箋はまだチェックされていません。\n閉じると内容は削除されます。閉じますか？' : '',
         destroy(){}
       };
     }
