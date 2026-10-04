@@ -55,7 +55,11 @@
         popups.forEach(([p, b]) => { if(!$(p).hidden && !e.target.closest(`${p}, ${b}`)) $(p).hidden = true; });
       });
       $('#tidy').onclick = tidy;
-      $('#clear').onclick = () => { if(items.length && confirm('すべてのウィジェットを削除しますか？')) [...items].forEach(i=>remove(i.id)); };
+      $('#clear').onclick = () => {
+        if(!items.length) return;
+        const warn = items.some(i => closeWarning(i.id)) ? '\n入力済みのメモも削除されます。' : '';
+        if(confirm('すべてのウィジェットを削除しますか？' + warn)) [...items].forEach(i => remove(i.id));
+      };
       document.addEventListener('keydown', e => { if(e.key==='Escape') document.querySelectorAll('.widget.full').forEach(w=>w.classList.remove('full')); });
     }
   };
@@ -172,10 +176,20 @@
     const inst = t.create(el.querySelector('.w-body'), item.state || {}, api);
     live[item.id] = { el, inst };
 
-    el.querySelector('[data-a=close]').onclick = () => remove(item.id);
+    el.querySelector('[data-a=close]').onclick = () => {
+      const msg = closeWarning(item.id);
+      if(msg && !confirm(msg)) return;
+      remove(item.id);
+    };
     el.querySelector('[data-a=full]').onclick = () => el.classList.toggle('full');
     el.addEventListener('pointerdown', () => bringFront(item, el));
     enableDrag(item, el, el.querySelector('.w-head'));
+  }
+
+  // A widget can return a message from inst.closeWarning() when closing it would lose something (e.g. memo text).
+  function closeWarning(id){
+    const inst = live[id] && live[id].inst;
+    return inst && inst.closeWarning ? inst.closeWarning() : '';
   }
 
   function bringFront(item, el){

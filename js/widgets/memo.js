@@ -6,7 +6,10 @@
     const ta = root.querySelector('textarea');
     ta.value = st.text || '';
     ta.oninput = () => api.save({ text: ta.value });
-    return { destroy(){} };
+    return {
+      closeWarning: () => ta.value.trim() ? 'メモに入力された内容があります。\n閉じると内容は削除されます。閉じますか？' : '',
+      destroy(){}
+    };
   }
 
   // 2-column width = two 250px columns + the 20px grid gap, so it lines up with other tools after tidying.
