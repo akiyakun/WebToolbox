@@ -34,6 +34,17 @@
     <button id="notify-test" class="pill">テスト通知</button>
   </div>
   <p id="notify-msg" class="hint" hidden></p>
+
+  <div class="setting setting-col">
+    <div class="setting-head">
+      <span><b>UIのスケール</b><small>画面全体の表示サイズ</small></span>
+      <output id="scale-val">100%</output>
+    </div>
+    <div class="setting-sub">
+      <input type="range" id="set-scale" class="range" min="50" max="150" step="10" value="100">
+      <button id="scale-reset" class="pill">100%</button>
+    </div>
+  </div>
 </aside>
 
 <main id="board" class="board">

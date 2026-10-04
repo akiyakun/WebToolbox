@@ -79,8 +79,14 @@ button{font:inherit;color:inherit;cursor:pointer}
 .switch:checked{background:var(--accent)}
 .switch:checked::after{left:19px;background:#0b0d12}
 
+.setting-col{display:block;margin-top:12px;cursor:default}
+.setting-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.setting-head output{font-variant-numeric:tabular-nums;font-weight:700;min-width:48px;text-align:right}
+.range{flex:1;accent-color:var(--accent);margin:0;cursor:pointer}
+
 /* shared controls */
 .setting-sub{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;font-size:12px;color:var(--muted)}
+.setting-sub .pill{white-space:nowrap;flex:none}
 .pill:disabled{opacity:.4;cursor:not-allowed}
 .row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
 .pill{

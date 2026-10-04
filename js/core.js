@@ -4,7 +4,7 @@
   const types = {};
   let items = [];          // {id,type,x,y,z,state}
   const live = {};         // id -> {el, inst}
-  let board, topZ = 1, settings = {};
+  let board, topZ = 1, settings = {}, scale = 1;
 
   const $ = s => document.querySelector(s);
   const snap = v => Math.max(0, Math.round(v / GRID) * GRID);
@@ -86,6 +86,19 @@
       ? '送信しました。表示されない場合は macOS のシステム設定 →「通知」で Google Chrome Helper (Alerts) の「通知を許可」を一度オフ→オンにし、Chrome を再起動してください。集中モードがオンの場合も表示されません。'
       : '送信できませんでした。ブラウザの通知許可を確認してください。');
 
+    const range = $('#set-scale'), val = $('#scale-val');
+    const applyScale = pct => {
+      pct = Math.min(150, Math.max(50, Math.round((+pct || 100) / 10) * 10));
+      scale = pct / 100;
+      document.body.style.zoom = pct === 100 ? '' : scale;
+      range.value = pct; val.textContent = pct + '%';
+      settings.scale = pct;
+    };
+    applyScale(settings.scale);
+    range.oninput = () => applyScale(range.value);
+    range.onchange = saveSettings;
+    $('#scale-reset').onclick = () => { applyScale(100); saveSettings(); };
+
     box.onchange = async () => {
       say('');
       if(box.checked){
@@ -164,8 +177,8 @@
       handle.setPointerCapture(e.pointerId);
       el.classList.add('dragging');
       const move = ev => {
-        item.x = Math.max(0, ox + ev.clientX - sx);
-        item.y = Math.max(0, oy + ev.clientY - sy);
+        item.x = Math.max(0, ox + (ev.clientX - sx) / scale);
+        item.y = Math.max(0, oy + (ev.clientY - sy) / scale);
         el.style.left = item.x + 'px'; el.style.top = item.y + 'px';
       };
       const up = () => {
