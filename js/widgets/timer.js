@@ -54,7 +54,7 @@
         if(running() && r <= 0) finish();
       }
       function finish(){
-        endAt = 0; left = 0; done = true; save(); beep(); box.classList.add('finished');
+        endAt = 0; left = 0; done = true; save(); beep(); Toolbox.notify('⏰ タイマー終了', fmt(total) + ' が経過しました'); box.classList.add('finished');
         document.title = '⏰ 終了！ - WebToolbox'; clearInterval(timer); timer=null; render();
         go.textContent = 'OK'; 
       }

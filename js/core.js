@@ -1,10 +1,10 @@
 /* WebToolbox core: widget registry + free-position board */
 (function(){
-  const GRID = 20, KEY = 'webtoolbox.board.v1';
+  const GRID = 20, KEY = 'webtoolbox.board.v1', SKEY = 'webtoolbox.settings.v1';
   const types = {};
   let items = [];          // {id,type,x,y,z,state}
   const live = {};         // id -> {el, inst}
-  let board, topZ = 1;
+  let board, topZ = 1, settings = {};
 
   const $ = s => document.querySelector(s);
   const snap = v => Math.max(0, Math.round(v / GRID) * GRID);
@@ -26,24 +26,64 @@
       } catch(e){}
     },
 
+    // Desktop notification; no-op unless enabled in settings and permitted by the browser.
+    notify(title, body){
+      if(!settings.notify || !('Notification' in window) || Notification.permission !== 'granted') return;
+      try {
+        const n = new Notification(title, { body, tag: 'webtoolbox' });
+        n.onclick = () => { window.focus(); n.close(); };
+      } catch(e){}
+    },
+
     start(){
       board = $('#board');
+      setupSettings();
       try { items = JSON.parse(localStorage.getItem(KEY)) || []; } catch(e){ items = []; }
       items = items.filter(i => types[i.type]);
       topZ = items.reduce((m,i)=>Math.max(m,i.z||1),1);
       items.forEach(mount);
       buildPalette();
       refreshEmpty();
-      $('#toggle-palette').onclick = () => { const p=$('#palette'); p.hidden = !p.hidden; };
+      const popups = [['#palette','#toggle-palette'], ['#settings','#toggle-settings']];
+      popups.forEach(([p, b]) => $(b).onclick = () => {
+        const el = $(p), open = el.hidden;
+        popups.forEach(([o]) => $(o).hidden = true);
+        el.hidden = !open;
+      });
       document.addEventListener('pointerdown', e => {
-        const p = $('#palette');
-        if(!p.hidden && !e.target.closest('#palette, #toggle-palette')) p.hidden = true;
+        popups.forEach(([p, b]) => { if(!$(p).hidden && !e.target.closest(`${p}, ${b}`)) $(p).hidden = true; });
       });
       $('#tidy').onclick = tidy;
       $('#clear').onclick = () => { if(items.length && confirm('すべてのウィジェットを削除しますか？')) [...items].forEach(i=>remove(i.id)); };
       document.addEventListener('keydown', e => { if(e.key==='Escape') document.querySelectorAll('.widget.full').forEach(w=>w.classList.remove('full')); });
     }
   };
+
+  function setupSettings(){
+    try { settings = JSON.parse(localStorage.getItem(SKEY)) || {}; } catch(e){ settings = {}; }
+    const box = $('#set-notify'), msg = $('#notify-msg');
+    const saveSettings = () => { try { localStorage.setItem(SKEY, JSON.stringify(settings)); } catch(e){} };
+    const say = t => { msg.textContent = t; msg.hidden = !t; };
+    const supported = 'Notification' in window;
+    if(!supported){ settings.notify = false; box.disabled = true; say('このブラウザではデスクトップ通知が使えません。'); }
+    else if(settings.notify && Notification.permission === 'denied'){ settings.notify = false; }
+    box.checked = !!settings.notify;
+
+    box.onchange = async () => {
+      say('');
+      if(box.checked){
+        let perm = Notification.permission;
+        if(perm === 'default') perm = await Notification.requestPermission();
+        if(perm !== 'granted'){
+          box.checked = false;
+          say('通知がブロックされています。ブラウザのアドレスバー左のサイト設定から通知を許可してください。');
+        } else {
+          new Notification('WebToolbox', { body: '通知がオンになりました', tag: 'webtoolbox' });
+        }
+      }
+      settings.notify = box.checked; saveSettings();
+    };
+  }
 
   function buildPalette(){
     const list = $('#palette-list');

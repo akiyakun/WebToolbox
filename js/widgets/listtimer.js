@@ -54,7 +54,7 @@
         if(active()) renderRun(); else renderList();
       }
       function finish(){
-        endAt = 0; paused = 0; done = true; Toolbox.beep(); box.classList.add('finished');
+        endAt = 0; paused = 0; done = true; Toolbox.beep(); Toolbox.notify('⏰ ListTimer 終了', dur(total) + ' が経過しました'); box.classList.add('finished');
         document.title = '⏰ 終了！ - WebToolbox'; renderRun();
       }
       function clearAlert(){ done = false; box.classList.remove('finished'); document.title = 'WebToolbox'; }

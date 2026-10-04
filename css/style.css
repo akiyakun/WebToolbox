@@ -70,6 +70,15 @@ button{font:inherit;color:inherit;cursor:pointer}
 }
 .widget.full .w-head{cursor:default}
 
+/* settings */
+.setting{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px;cursor:pointer}
+.setting b{display:block;font-size:15px}
+.setting small{color:var(--muted)}
+.switch{appearance:none;flex:none;width:40px;height:24px;border-radius:999px;background:var(--line);position:relative;cursor:pointer;margin:0;transition:.15s}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--text);transition:.15s}
+.switch:checked{background:var(--accent)}
+.switch:checked::after{left:19px;background:#0b0d12}
+
 /* shared controls */
 .row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
 .pill{
