@@ -1,13 +1,16 @@
-/* WebToolbox core: widget registry + free-position board */
+/* WebToolbox core: widget registry + column-grid board (no overlapping) */
 (function(){
-  const GRID = 20, KEY = 'webtoolbox.board.v1', SKEY = 'webtoolbox.settings.v1';
+  const KEY = 'webtoolbox.board.v1', SKEY = 'webtoolbox.settings.v1';
+  // Board grid: 250px columns with 20px gaps, 20px padding. Widgets are 1 or 2 columns wide (250 / 520px).
+  const GAP = 20, COL = 250, PITCH = COL + GAP, PAD = 20;
   const types = {};
   let items = [];          // {id,type,x,y,z,state}
   const live = {};         // id -> {el, inst}
   let board, topZ = 1, settings = {}, scale = 1;
 
   const $ = s => document.querySelector(s);
-  const snap = v => Math.max(0, Math.round(v / GRID) * GRID);
+  const colX = c => PAD + c * PITCH;
+  const toCol = x => Math.max(0, Math.round((x - PAD) / PITCH));
   const uid = () => Math.random().toString(36).slice(2, 9);
   const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(items)); } catch(e){} };
 
@@ -39,6 +42,7 @@
       items = items.filter(i => types[i.type]);
       topZ = items.reduce((m,i)=>Math.max(m,i.z||1),1);
       items.forEach(mount);
+      settle();
       buildPalette();
       refreshEmpty();
       const popups = [['#palette','#toggle-palette'], ['#settings','#toggle-settings']];
@@ -136,12 +140,12 @@
   }
 
   function add(type){
-    const t = types[type];
-    // place at first free-ish spot (cascade)
-    const n = items.length;
-    const item = { id: uid(), type, x: snap(20 + (n%6)*40), y: snap(20 + (n%6)*40), z: ++topZ, state: {} };
+    const item = { id: uid(), type, x: PAD, y: PAD, z: ++topZ, state: {} };
+    const others = items.map(rectOf);
     items.push(item);
     mount(item);
+    const { x, y } = firstFree(rectOf(item), others);
+    moveTo(item, x, y);
     persist(); refreshEmpty();
   }
 
@@ -183,20 +187,30 @@
     handle.addEventListener('pointerdown', e => {
       if(e.target.closest('button') || el.classList.contains('full')) return;
       const sx = e.clientX, sy = e.clientY, ox = item.x, oy = item.y;
+      const others = items.filter(i => i !== item).map(rectOf), me = rectOf(item);
       handle.setPointerCapture(e.pointerId);
       el.classList.add('dragging');
+      // The widget follows the cursor freely; the ghost shows the grid slot it will land in.
+      const ghost = document.createElement('div');
+      ghost.className = 'drop-ghost';
+      ghost.style.cssText = `width:${me.w}px;height:${me.h}px`;
+      board.appendChild(ghost);
+      let target = { x: item.x, y: item.y };
       const move = ev => {
-        item.x = Math.max(0, ox + (ev.clientX - sx) / scale);
-        item.y = Math.max(0, oy + (ev.clientY - sy) / scale);
-        el.style.left = item.x + 'px'; el.style.top = item.y + 'px';
+        const fx = Math.max(0, ox + (ev.clientX - sx) / scale), fy = Math.max(0, oy + (ev.clientY - sy) / scale);
+        el.style.left = fx + 'px'; el.style.top = fy + 'px';
+        const x = colX(toCol(fx));
+        target = { x, y: freeY({ ...me, x }, fy, others) };
+        ghost.style.left = target.x + 'px'; ghost.style.top = target.y + 'px';
       };
+      move(e);
       const up = () => {
         handle.removeEventListener('pointermove', move);
         handle.removeEventListener('pointerup', up);
         handle.removeEventListener('pointercancel', up);
         el.classList.remove('dragging');
-        item.x = snap(item.x); item.y = snap(item.y);
-        el.style.left = item.x + 'px'; el.style.top = item.y + 'px';
+        ghost.remove();
+        moveTo(item, target.x, target.y);
         persist();
       };
       handle.addEventListener('pointermove', move);
@@ -205,15 +219,67 @@
     });
   }
 
+  /* ---- grid layout ---- */
+
+  // Size comes from the type width and the rendered height (remembered so a fullscreen widget keeps its board size).
+  function rectOf(i){
+    const l = live[i.id];
+    if(!l.el.classList.contains('full')) l.h = l.el.offsetHeight;
+    return { x: i.x, y: i.y, w: types[i.type].w, h: l.h };
+  }
+  // True if the boxes overlap or sit closer than GAP. Neighbouring columns (exactly GAP apart) don't collide.
+  const hits = (a, b) => a.x < b.x + b.w + GAP && b.x < a.x + a.w + GAP && a.y < b.y + b.h + GAP && b.y < a.y + a.h + GAP;
+
+  // The free y closest to wantY for box r (its x fixed). A free slot is always at the top or just below another widget.
+  function freeY(r, wantY, others){
+    const cands = [PAD, Math.max(PAD, Math.round(wantY / GAP) * GAP)];
+    others.forEach(o => cands.push(o.y + o.h + GAP, o.y - GAP - r.h));
+    let best = null;
+    cands.forEach(y => {
+      if(y < PAD || others.some(o => hits({ ...r, y }, o))) return;
+      if(best === null || Math.abs(y - wantY) < Math.abs(best - wantY)) best = y;
+    });
+    return best;
+  }
+
+  // Top-most, then left-most free slot among the columns visible on screen (fits if it ends within 8px of the edge).
+  function firstFree(r, others){
+    const maxRight = board.clientWidth - 8;
+    let best = null;
+    for(let c = 0; c === 0 || colX(c) + r.w <= maxRight; c++){
+      const x = colX(c), y = freeY({ ...r, x }, PAD, others);
+      if(best === null || y < best.y) best = { x, y };
+    }
+    return best;
+  }
+
+  function moveTo(i, x, y){
+    i.x = x; i.y = y;
+    const el = live[i.id].el;
+    el.style.left = x + 'px'; el.style.top = y + 'px';
+  }
+
+  // Visual order: top to bottom, then left to right.
+  const byPosition = () => [...items].sort((a, b) => a.y - b.y || a.x - b.x);
+
+  // Snap saved positions onto the grid, keeping each widget near where it was and resolving overlaps.
+  function settle(){
+    const placed = [];
+    byPosition().forEach(i => {
+      const r = rectOf(i), x = colX(toCol(i.x));
+      moveTo(i, x, freeY({ ...r, x }, i.y, placed));
+      placed.push(rectOf(i));
+    });
+    persist();
+  }
+
+  // Re-pack everything into the top-left, keeping the current visual order.
   function tidy(){
-    // Pack as tightly as possible: a widget fits on the row if it ends within 8px of the visible right edge.
-    const maxW = board.clientWidth - 8;
-    let x = 20, y = 20, rowH = 0;
-    items.forEach(i => {
-      const el = live[i.id].el, w = el.offsetWidth, h = el.offsetHeight;
-      if(x + w > maxW && x > 20){ x = 20; y += rowH + GRID; rowH = 0; }
-      i.x = x; i.y = y; el.style.left = x+'px'; el.style.top = y+'px';
-      x += w + GRID; rowH = Math.max(rowH, h);
+    const placed = [];
+    byPosition().forEach(i => {
+      const { x, y } = firstFree(rectOf(i), placed);
+      moveTo(i, x, y);
+      placed.push(rectOf(i));
     });
     persist();
   }
