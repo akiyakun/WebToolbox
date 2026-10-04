@@ -91,6 +91,7 @@
       pct = Math.min(150, Math.max(50, Math.round((+pct || 100) / 5) * 5));
       scale = pct / 100;
       document.body.style.zoom = pct === 100 ? '' : scale;
+      document.documentElement.style.setProperty('--zoom', scale);
       // Cancel the zoom on the settings panel so the slider doesn't move under the cursor while dragging.
       $('#settings').style.zoom = pct === 100 ? '' : 1 / scale;
       // Only reposition under the topbar while closed, so the open panel never moves under the cursor.
@@ -205,7 +206,8 @@
   }
 
   function tidy(){
-    const maxW = board.clientWidth - 40;
+    // Pack as tightly as possible: a widget fits on the row if it ends within 8px of the visible right edge.
+    const maxW = board.clientWidth - 8;
     let x = 20, y = 20, rowH = 0;
     items.forEach(i => {
       const el = live[i.id].el, w = el.offsetWidth, h = el.offsetHeight;
