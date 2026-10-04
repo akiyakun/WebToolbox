@@ -28,11 +28,8 @@
 
     // Desktop notification; no-op unless enabled in settings and permitted by the browser.
     notify(title, body){
-      if(!settings.notify || !('Notification' in window) || Notification.permission !== 'granted') return;
-      try {
-        const n = new Notification(title, { body, tag: 'webtoolbox' });
-        n.onclick = () => { window.focus(); n.close(); };
-      } catch(e){}
+      if(!settings.notify) return;
+      showNotification(title, body);
     },
 
     start(){
@@ -59,15 +56,35 @@
     }
   };
 
+  // No `tag`: a shared tag makes macOS replace the previous notification silently, with no banner.
+  function showNotification(title, body){
+    if(!('Notification' in window) || Notification.permission !== 'granted') return false;
+    try {
+      const n = new Notification(title, { body });
+      n.onclick = () => { window.focus(); n.close(); };
+      return true;
+    } catch(e){ return false; }
+  }
+
   function setupSettings(){
     try { settings = JSON.parse(localStorage.getItem(SKEY)) || {}; } catch(e){ settings = {}; }
-    const box = $('#set-notify'), msg = $('#notify-msg');
+    const box = $('#set-notify'), msg = $('#notify-msg'), test = $('#notify-test'), status = $('#notify-status');
     const saveSettings = () => { try { localStorage.setItem(SKEY, JSON.stringify(settings)); } catch(e){} };
     const say = t => { msg.textContent = t; msg.hidden = !t; };
     const supported = 'Notification' in window;
     if(!supported){ settings.notify = false; box.disabled = true; say('このブラウザではデスクトップ通知が使えません。'); }
     else if(settings.notify && Notification.permission === 'denied'){ settings.notify = false; }
     box.checked = !!settings.notify;
+    const PERM = { granted:'許可済み', denied:'ブロック中', default:'未設定' };
+    const refresh = () => {
+      test.disabled = !box.checked;
+      status.textContent = supported ? 'ブラウザの通知許可: ' + PERM[Notification.permission] : '';
+    };
+    refresh();
+    $('#toggle-settings').addEventListener('click', refresh);
+    test.onclick = () => say(showNotification('WebToolbox', 'テスト通知です')
+      ? '送信しました。表示されない場合は macOS の集中モードや通知設定を確認してください。'
+      : '送信できませんでした。ブラウザの通知許可を確認してください。');
 
     box.onchange = async () => {
       say('');
@@ -78,10 +95,10 @@
           box.checked = false;
           say('通知がブロックされています。ブラウザのアドレスバー左のサイト設定から通知を許可してください。');
         } else {
-          new Notification('WebToolbox', { body: '通知がオンになりました', tag: 'webtoolbox' });
+          showNotification('WebToolbox', '通知がオンになりました');
         }
       }
-      settings.notify = box.checked; saveSettings();
+      settings.notify = box.checked; saveSettings(); refresh();
     };
   }
 
