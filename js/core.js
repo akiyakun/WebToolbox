@@ -83,7 +83,7 @@
     refresh();
     $('#toggle-settings').addEventListener('click', refresh);
     test.onclick = () => say(showNotification('WebToolbox', 'テスト通知です')
-      ? '送信しました。表示されない場合は macOS の集中モードや通知設定を確認してください。'
+      ? '送信しました。表示されない場合は macOS のシステム設定 →「通知」で Google Chrome Helper (Alerts) の「通知を許可」を一度オフ→オンにし、Chrome を再起動してください。集中モードがオンの場合も表示されません。'
       : '送信できませんでした。ブラウザの通知許可を確認してください。');
 
     box.onchange = async () => {
