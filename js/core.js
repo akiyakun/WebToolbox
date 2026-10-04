@@ -53,14 +53,21 @@
       });
       document.addEventListener('pointerdown', e => {
         popups.forEach(([p, b]) => { if(!$(p).hidden && !e.target.closest(`${p}, ${b}`)) $(p).hidden = true; });
+        if(menuEl && !e.target.closest('.ctx-menu')) closeMenu();
       });
+      window.addEventListener('scroll', closeMenu, true);
+      window.addEventListener('blur', closeMenu);
       $('#tidy').onclick = tidy;
       $('#clear').onclick = () => {
         if(!items.length) return;
         const warn = items.some(i => closeWarning(i.id)) ? '\n入力済みのメモも削除されます。' : '';
         if(confirm('すべてのウィジェットを削除しますか？' + warn)) [...items].forEach(i => remove(i.id));
       };
-      document.addEventListener('keydown', e => { if(e.key==='Escape') document.querySelectorAll('.widget.full').forEach(w=>w.classList.remove('full')); });
+      document.addEventListener('keydown', e => {
+        if(e.key !== 'Escape') return;
+        closeMenu();
+        document.querySelectorAll('.widget.full').forEach(w => w.classList.remove('full'));
+      });
     }
   };
 
@@ -166,24 +173,67 @@
     const el = document.createElement('section');
     el.className = 'widget';
     el.style.cssText = `left:${item.x}px;top:${item.y}px;width:${t.w||280}px;${t.h?`height:${t.h}px;`:''}z-index:${item.z||1}`;
-    el.innerHTML = `
+    // headless: no title bar; the whole window is the drag handle and closing goes through the context menu.
+    el.innerHTML = (t.headless ? '' : `
       <div class="w-head"><span>${t.icon}</span><span class="w-title">${t.title}</span>
         <button class="w-btn" data-a="full" title="拡大表示">⛶</button>
-        <button class="w-btn" data-a="close" title="閉じる">✕</button></div>
+        <button class="w-btn" data-a="close" title="閉じる">✕</button></div>`) + `
       <div class="w-body"></div>`;
     board.appendChild(el);
-    const api = { save(state){ item.state = state; persist(); }, el };
-    const inst = t.create(el.querySelector('.w-body'), item.state || {}, api);
-    live[item.id] = { el, inst };
-
-    el.querySelector('[data-a=close]').onclick = () => {
+    const close = () => {
       const msg = closeWarning(item.id);
       if(msg && !confirm(msg)) return;
       remove(item.id);
     };
-    el.querySelector('[data-a=full]').onclick = () => el.classList.toggle('full');
+    const api = { save(state){ item.state = state; persist(); }, el, close };
+    const inst = t.create(el.querySelector('.w-body'), item.state || {}, api);
+    live[item.id] = { el, inst };
+
+    if(!t.headless){
+      el.querySelector('[data-a=close]').onclick = close;
+      el.querySelector('[data-a=full]').onclick = () => el.classList.toggle('full');
+    }
     el.addEventListener('pointerdown', () => bringFront(item, el));
-    enableDrag(item, el, el.querySelector('.w-head'));
+    el.addEventListener('contextmenu', e => {
+      if(!inst.menu) return;
+      e.preventDefault();
+      openMenu(e.clientX, e.clientY, [...inst.menu(), [{ label: '閉じる', danger: true, action: close }]]);
+    });
+    enableDrag(item, el, t.headless ? el : el.querySelector('.w-head'), inst);
+  }
+
+  /* ---- context menu ----
+     sections: [[{ label, action, swatch?, active?, danger? }, ...], ...]
+     A section made only of swatch items renders as a row of colour chips. */
+  let menuEl = null;
+  function closeMenu(){ if(menuEl){ menuEl.remove(); menuEl = null; } }
+  function openMenu(cx, cy, sections){
+    closeMenu();
+    menuEl = document.createElement('div');
+    menuEl.className = 'ctx-menu';
+    sections.forEach(sec => {
+      const row = document.createElement('div');
+      row.className = sec.every(it => it.swatch) ? 'ctx-swatches' : 'ctx-section';
+      sec.forEach(it => {
+        const b = document.createElement('button');
+        if(it.swatch){
+          b.className = 'ctx-swatch' + (it.active ? ' on' : '');
+          b.style.background = it.swatch; b.title = it.label;
+        } else {
+          b.className = 'ctx-item' + (it.danger ? ' danger' : '');
+          b.textContent = it.label;
+        }
+        b.onclick = () => { closeMenu(); it.action(); };
+        row.appendChild(b);
+      });
+      menuEl.appendChild(row);
+    });
+    document.body.appendChild(menuEl);
+    // clientX/Y are screen px; the menu lives inside the zoomed body, so convert and keep it on screen.
+    const vw = document.documentElement.clientWidth / scale, vh = document.documentElement.clientHeight / scale;
+    const w = menuEl.offsetWidth, h = menuEl.offsetHeight;
+    menuEl.style.left = Math.min(cx / scale, vw - w - 4) + 'px';
+    menuEl.style.top = Math.min(cy / scale, vh - h - 4) + 'px';
   }
 
   // A widget can return a message from inst.closeWarning() when closing it would lose something (e.g. memo text).
@@ -197,31 +247,39 @@
     item.z = ++topZ; el.style.zIndex = item.z; persist();
   }
 
-  function enableDrag(item, el, handle){
+  // Dragging starts after the pointer moves a few px; a press without movement is a tap (inst.tap, e.g. start typing).
+  // In a whole-window handle, inputs and a focused text field keep their normal mouse behaviour.
+  function enableDrag(item, el, handle, inst){
     handle.addEventListener('pointerdown', e => {
-      if(e.target.closest('button') || el.classList.contains('full')) return;
+      if(e.button !== 0 || e.target.closest('button') || el.classList.contains('full')) return;
+      const whole = handle === el;
+      if(whole && (e.target.closest('input') || (e.target.closest('textarea') && e.target.closest('textarea') === document.activeElement))) return;
+      if(whole) e.preventDefault();
       const sx = e.clientX, sy = e.clientY, ox = item.x, oy = item.y;
       const others = items.filter(i => i !== item).map(rectOf), me = rectOf(item);
       handle.setPointerCapture(e.pointerId);
-      el.classList.add('dragging');
       // The widget follows the cursor freely; the ghost shows the grid slot it will land in.
-      const ghost = document.createElement('div');
-      ghost.className = 'drop-ghost';
-      ghost.style.cssText = `width:${me.w}px;height:${me.h}px`;
-      board.appendChild(ghost);
-      let target = { x: item.x, y: item.y };
+      let ghost = null, target = { x: item.x, y: item.y };
       const move = ev => {
+        if(!ghost){
+          if(Math.hypot(ev.clientX - sx, ev.clientY - sy) < 4) return;
+          el.classList.add('dragging');
+          ghost = document.createElement('div');
+          ghost.className = 'drop-ghost';
+          ghost.style.cssText = `width:${me.w}px;height:${me.h}px`;
+          board.appendChild(ghost);
+        }
         const fx = Math.max(0, ox + (ev.clientX - sx) / scale), fy = Math.max(0, oy + (ev.clientY - sy) / scale);
         el.style.left = fx + 'px'; el.style.top = fy + 'px';
         const x = colX(toCol(fx));
         target = { x, y: freeY({ ...me, x }, fy, others) };
         ghost.style.left = target.x + 'px'; ghost.style.top = target.y + 'px';
       };
-      move(e);
       const up = () => {
         handle.removeEventListener('pointermove', move);
         handle.removeEventListener('pointerup', up);
         handle.removeEventListener('pointercancel', up);
+        if(!ghost){ if(inst && inst.tap) inst.tap(); return; }
         el.classList.remove('dragging');
         ghost.remove();
         moveTo(item, target.x, target.y);

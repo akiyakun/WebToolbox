@@ -175,3 +175,38 @@ button{font:inherit;color:inherit;cursor:pointer}
 .memo:focus{border-color:var(--accent)}
 .memo::placeholder{color:var(--muted)}
 .widget.full .memo-body{align-items:stretch;justify-content:stretch}
+
+/* Sticky note */
+.widget.sticky{background:var(--sticky);border:0;border-radius:6px;cursor:grab;touch-action:none}
+.widget.sticky.dragging{cursor:grabbing}
+.widget.sticky.done{background:#9ca3af}
+.sticky-body{flex-direction:row;align-items:flex-start;gap:6px;padding:8px}
+.sticky-check{
+  appearance:none;flex:none;width:18px;height:18px;margin:2px 0 0;border:2px solid rgba(0,0,0,.45);border-radius:4px;
+  background:transparent;cursor:pointer;position:relative;
+}
+.sticky-check:checked{background:rgba(0,0,0,.6);border-color:transparent}
+.sticky-check:checked::after{
+  content:"";position:absolute;left:5px;top:1px;width:5px;height:10px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg);
+}
+.sticky-text{
+  flex:1;min-width:0;height:100%;margin:0;padding:0;border:0;outline:0;resize:none;background:transparent;
+  color:#1f2937;font:600 15px/21px -apple-system,BlinkMacSystemFont,"Hiragino Sans",sans-serif;
+  overflow-y:auto;overscroll-behavior:contain;cursor:inherit;
+}
+.sticky-text:focus{cursor:text}
+.sticky-text::placeholder{color:rgba(0,0,0,.35)}
+
+/* Context menu */
+.ctx-menu{
+  position:fixed;z-index:10002;min-width:180px;padding:4px;background:var(--panel);border:1px solid var(--line);
+  border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.5);
+}
+.ctx-section+.ctx-section,.ctx-swatches+.ctx-section,.ctx-section+.ctx-swatches{border-top:1px solid var(--line);margin-top:4px;padding-top:4px}
+.ctx-swatches{display:flex;gap:6px;padding:4px}
+.ctx-swatch{width:24px;height:24px;border-radius:50%;border:2px solid transparent;padding:0}
+.ctx-swatch:hover{border-color:var(--muted)}
+.ctx-swatch.on{border-color:var(--text)}
+.ctx-item{display:block;width:100%;text-align:left;background:transparent;border:0;border-radius:6px;padding:4px 8px;font-size:13px}
+.ctx-item:hover{background:var(--panel2)}
+.ctx-item.danger:hover{color:var(--danger)}
