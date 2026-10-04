@@ -168,7 +168,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .memo{
   flex:1;width:100%;min-height:0;resize:none;margin:0;padding:8px;
   background:var(--bg2);color:var(--text);border:1px solid var(--line);border-radius:10px;outline:0;
-  font:14px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;
+  font:16px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;
   white-space:pre;overflow:auto;overscroll-behavior:contain;
 }
 .memo:focus{border-color:var(--accent)}

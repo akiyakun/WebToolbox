@@ -10,6 +10,6 @@
   }
 
   // 2-column width = two 250px columns + the 20px grid gap, so it lines up with other tools after tidying.
-  Toolbox.register({ type:'memo',  title:'メモ帳', icon:'📝', desc:'1列幅のメモ', w:250, h:379, create });
-  Toolbox.register({ type:'memo2', title:'メモ帳（ワイド）', icon:'📝', desc:'2列幅のメモ', w:520, h:379, create });
+  Toolbox.register({ type:'memo',  title:'メモ帳', icon:'📝', desc:'1列幅のメモ', w:250, h:253, create });
+  Toolbox.register({ type:'memo2', title:'メモ帳（ワイド）', icon:'📝', desc:'2列幅のメモ', w:520, h:253, create });
 })();
