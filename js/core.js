@@ -119,6 +119,17 @@
     range.oninput = () => applyScale(range.value);
     range.onchange = saveSettings;
     $('#toggle-settings').addEventListener('click', () => document.documentElement.style.setProperty('--ui-scale', scale));
+    // The counter-zoom makes CSS right/left land in the wrong place at non-100% scales, so measure after opening
+    // and shift the panel back inside the window (16px margin). translate is in screen px because its net zoom is 1.
+    const fitSettings = () => {
+      const p = $('#settings');
+      p.style.translate = '';
+      if(p.hidden) return;
+      const r = p.getBoundingClientRect(), vw = document.documentElement.clientWidth;
+      const dx = r.right > vw - 16 ? vw - 16 - r.right : r.left < 16 ? 16 - r.left : 0;
+      p.style.translate = dx + 'px 0';
+    };
+    $('#toggle-settings').addEventListener('click', () => setTimeout(fitSettings));
     $('#scale-down').onclick = () => { applyScale(scale * 100 - 5); saveSettings(); };
     $('#scale-up').onclick = () => { applyScale(scale * 100 + 5); saveSettings(); };
     $('#scale-reset').onclick = () => { applyScale(100); saveSettings(); };

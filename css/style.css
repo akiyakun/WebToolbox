@@ -2,7 +2,7 @@
   --bg:#0b0d12; --bg2:#12151c; --panel:#161a23; --panel2:#1d2230;
   --line:#272d3d; --text:#e8ecf4; --muted:#8892a8;
   --accent:#6ea8fe; --accent2:#a78bfa; --ok:#4ade80; --warn:#fbbf24; --danger:#f87171;
-  --radius:16px; --grid:20px; --topbar-h:54px;
+  --radius:16px; --grid:20px; --topbar-h:50px;
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;overscroll-behavior:none}
@@ -18,7 +18,8 @@ button{font:inherit;color:inherit;cursor:pointer}
   position:sticky;top:0;z-index:10000;display:flex;justify-content:flex-end;align-items:center;
   height:var(--topbar-h);padding:0 20px;background:rgba(11,13,18,.8);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);
 }
-.actions{display:flex;gap:8px}
+.actions{display:flex;gap:8px;align-items:center;justify-content:space-between;width:100%}
+#toggle-settings{width:34px;height:34px;padding:0;font-size:20px;line-height:1;display:grid;place-items:center}
 .btn{
   background:var(--accent);color:#0b0d12;border:0;
   padding:4px 7px;border-radius:10px;font-weight:600;transition:.15s;white-space:nowrap;
@@ -28,13 +29,16 @@ button{font:inherit;color:inherit;cursor:pointer}
 .btn.danger:hover{color:var(--danger);border-color:var(--danger)}
 
 .palette{
-  position:fixed;top:calc(var(--topbar-h) + 6px);right:16px;width:300px;z-index:10001;
+  position:fixed;top:calc(var(--topbar-h) + 6px);right:16px;z-index:10001;
+  width:min(300px, calc(100vw / var(--zoom, 1) - 32px));
   background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
   padding:8px;box-shadow:0 20px 50px rgba(0,0,0,.5);
 }
 .palette[hidden]{display:none}
 /* Settings is shown at 100% regardless of UI scale; keep it under the scaled topbar. */
-#settings{top:calc((var(--topbar-h) + 6px) * var(--ui-scale, 1))}
+#settings{top:calc((var(--topbar-h) + 6px) * var(--ui-scale, 1));width:min(300px, calc(100vw - 32px))}
+/* The tool list opens under "+ Add" on the left. */
+#palette{right:auto;left:16px}
 .palette h2{margin:2px 4px 8px;font-size:14px;color:var(--muted);font-weight:600}
 .palette-list{display:grid;gap:8px}
 .tool{
