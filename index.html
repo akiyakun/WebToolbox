@@ -10,14 +10,17 @@
 <header class="topbar">
   <div class="actions">
     <button id="toggle-palette" class="btn" title="ツールを追加">+ Add</button>
-    <button id="toggle-settings" class="btn ghost" title="設定">⚙</button>
+    <div class="actions-right">
+      <span id="sync-status" class="sync-status" hidden></span>
+      <button id="toggle-settings" class="btn ghost" title="設定">⚙</button>
+    </div>
   </div>
 </header>
 
 <aside id="palette" class="palette" hidden>
   <h2>ツール一覧</h2>
   <div id="palette-list" class="palette-list"></div>
-  <p class="hint">クリックでボードに追加。同じツールを複数置けます。ヘッダーをドラッグで移動、位置は自動保存されます。</p>
+  <p class="hint">クリックでボードに追加。タイマー系は複数置けます。メモ帳・付箋は1つずつで、閉じても中身は残ります。ヘッダーをドラッグで移動、位置は自動保存されます。</p>
 </aside>
 
 <aside id="settings" class="palette" hidden>
@@ -58,16 +61,17 @@
 
 <main id="board" class="board">
   <div id="empty" class="empty" hidden>
-    <p>ボードは空です。<br>右上の「+ Add」からツールを置いてみましょう。</p>
+    <p>ボードは空です。<br>左上の「+ Add」からツールを置いてみましょう。</p>
   </div>
 </main>
 
+<script src="js/store.js"></script>
 <script src="js/core.js"></script>
 <script src="js/widgets/timer.js"></script>
 <script src="js/widgets/stopwatch.js"></script>
 <script src="js/widgets/listtimer.js"></script>
 <script src="js/widgets/memo.js"></script>
-<script src="js/widgets/sticky.js"></script>
+<script src="js/widgets/stickies.js"></script>
 <script src="js/start.js"></script>
 </body>
 </html>

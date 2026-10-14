@@ -4,7 +4,10 @@
   // Board grid: 250px columns with 20px gaps, 20px padding. Widgets are 1 or 2 columns wide (250 / 520px).
   const GAP = 20, COL = 250, PITCH = COL + GAP, PAD = 20;
   const types = {};
-  let items = [];          // {id,type,x,y,z,state}
+  const store = window.ToolboxStore;
+  // Board layout is per device. A "doc" tool (def.doc) is placed at most once and keeps its contents in the
+  // store (shared via the server) instead of item.state, so closing it doesn't lose anything.
+  let items = [];          // {id,type,x,y,z,state?}
   const live = {};         // id -> {el, inst}
   let board, topZ = 1, settings = {}, scale = 1;
 
@@ -35,16 +38,25 @@
       showNotification(title, body);
     },
 
-    start(){
+    async start(){
       board = $('#board');
       setupSettings();
+      store.onStatus(showSyncStatus);
+      await store.connect();
       try { items = JSON.parse(localStorage.getItem(KEY)) || []; } catch(e){ items = []; }
-      items = items.filter(i => types[i.type]);
+      migrate();
+      const placed = new Set();
+      items = items.filter(i => types[i.type] && !(types[i.type].doc && placed.has(i.type)) && placed.add(i.type));
       topZ = items.reduce((m,i)=>Math.max(m,i.z||1),1);
       items.forEach(mount);
       settle();
       buildPalette();
       refreshEmpty();
+      // Another device changed a doc: show it in the tool if it is on this board.
+      store.onChange((type, data) => {
+        const item = items.find(i => i.type === type);
+        if(item) reload(item, data);
+      });
       const popups = [['#palette','#toggle-palette'], ['#settings','#toggle-settings']];
       popups.forEach(([p, b]) => $(b).onclick = () => {
         const el = $(p), open = el.hidden;
@@ -60,8 +72,9 @@
       $('#tidy').onclick = tidy;
       $('#clear').onclick = () => {
         if(!items.length) return;
-        const warn = items.some(i => closeWarning(i.id)) ? '\n入力済みのメモも削除されます。' : '';
-        if(confirm('すべてのウィジェットを削除しますか？' + warn)) [...items].forEach(i => remove(i.id));
+        const kept = items.some(i => types[i.type].doc) ? '\nメモ帳・付箋の中身は残ります。' : '';
+        const warn = items.some(i => closeWarning(i.id)) ? '\n入力済みの内容も削除されます。' : '';
+        if(confirm('すべてのツールを閉じますか？' + kept + warn)) [...items].forEach(i => remove(i.id));
       };
       document.addEventListener('keydown', e => {
         if(e.key !== 'Escape') return;
@@ -153,33 +166,69 @@
     };
   }
 
+  function showSyncStatus(st){
+    const el = $('#sync-status');
+    el.hidden = !st.server || st.online;
+    el.textContent = st.unsaved ? '⚠ 保存できていません' : '⚠ サーバーに接続できません';
+    el.title = st.unsaved ? 'サーバーに接続できないため、メモ帳・付箋の変更はこのブラウザにだけ保存されています。つながると自動で保存します。'
+                          : 'サーバーに接続できないため、ほかの端末での変更を取り込めません。';
+  }
+
   function buildPalette(){
     const list = $('#palette-list');
     Object.values(types).forEach(t => {
       const b = document.createElement('button');
       b.className = 'tool';
-      b.innerHTML = `<span class="ic">${t.icon}</span><span><b>${t.title}</b><small>${t.desc||''}</small></span>`;
+      b.dataset.type = t.type;
+      b.innerHTML = `<span class="ic">${t.icon}</span><span><b>${t.title}</b><small>${t.desc||''}</small></span>` +
+        (t.doc ? '<span class="tool-placed">配置中</span>' : '');
       b.onclick = () => add(t.type);
       list.appendChild(b);
     });
+    refreshPalette();
+  }
+  // A doc tool already on the board is marked; clicking it brings that one to the front instead of adding another.
+  function refreshPalette(){
+    document.querySelectorAll('#palette-list .tool').forEach(b =>
+      b.classList.toggle('placed', !!types[b.dataset.type].doc && items.some(i => i.type === b.dataset.type)));
   }
 
   function add(type){
-    const item = { id: uid(), type, x: PAD, y: PAD, z: ++topZ, state: {} };
+    const existing = types[type].doc && items.find(i => i.type === type);
+    if(existing){
+      const el = live[existing.id].el;
+      bringFront(existing, el);
+      el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      return;
+    }
+    const item = { id: uid(), type, x: PAD, y: PAD, z: ++topZ };
+    if(!types[type].doc) item.state = {};
     const others = items.map(rectOf);
     items.push(item);
     mount(item);
     const { x, y } = firstFree(rectOf(item), others);
     moveTo(item, x, y);
-    persist(); refreshEmpty();
+    persist(); refreshEmpty(); refreshPalette();
   }
 
-  function remove(id){
+  function unmount(id){
     const l = live[id]; if(!l) return;
     l.inst && l.inst.destroy && l.inst.destroy();
     l.el.remove(); delete live[id];
+  }
+
+  function remove(id){
+    unmount(id);
     items = items.filter(i => i.id !== id);
-    persist(); refreshEmpty();
+    persist(); refreshEmpty(); refreshPalette();
+  }
+
+  // New contents for a doc tool from another device. Tools can update in place (inst.load, e.g. keeping the
+  // caret); otherwise the window is rebuilt where it is.
+  function reload(item, data){
+    const inst = live[item.id] && live[item.id].inst;
+    if(inst && inst.load) return inst.load(data);
+    unmount(item.id); mount(item);
   }
 
   function mount(item){
@@ -199,8 +248,8 @@
       if(msg && !confirm(msg)) return;
       remove(item.id);
     };
-    const api = { save(state){ item.state = state; persist(); }, el, close };
-    const inst = t.create(el.querySelector('.w-body'), item.state || {}, api);
+    const api = { el, close, save: t.doc ? data => store.set(item.type, data) : state => { item.state = state; persist(); } };
+    const inst = t.create(el.querySelector('.w-body'), (t.doc ? store.get(item.type) : item.state) || {}, api);
     live[item.id] = { el, inst };
 
     if(!t.headless){
@@ -211,7 +260,7 @@
     el.addEventListener('contextmenu', e => {
       if(!inst.menu) return;
       e.preventDefault();
-      openMenu(e.clientX, e.clientY, [...inst.menu(), [{ label: '閉じる', danger: true, action: close }]]);
+      openMenu(e.clientX, e.clientY, [...inst.menu(e), [{ label: '閉じる', danger: true, action: close }]]);
     });
     enableDrag(item, el, t.headless ? el : el.querySelector('.w-head'), inst);
   }
@@ -371,6 +420,31 @@
   }
 
   function refreshEmpty(){ $('#empty').hidden = items.length > 0; }
+
+  /* ---- one-time move from the old board (before doc tools) ----
+     Memos and sticky notes used to live in each widget's state and could be placed many times. Their text is
+     added to the shared doc (skipping text it already has, e.g. moved from another browser), the first memo of
+     each width stays on the board, and the first sticky note becomes the stickies board. */
+  function migrate(){
+    const MKEY = 'webtoolbox.migrated.v2';
+    try { if(localStorage.getItem(MKEY)) return; } catch(e){ return; }
+    const SEP = '\n\n――――――――\n\n';
+    ['memo', 'memo2'].forEach(type => {
+      const texts = items.filter(i => i.type === type).map(i => ((i.state && i.state.text) || '').trim()).filter(Boolean);
+      const cur = ((store.get(type) || {}).text || '').trim();
+      const add = texts.filter(t => !cur.includes(t));
+      if(add.length) store.set(type, { text: [cur, ...add].filter(Boolean).join(SEP) });
+    });
+    const old = items.filter(i => i.type === 'sticky');
+    const cur = (store.get('stickies') || {}).notes || [];
+    const add = old.map(i => i.state || {}).filter(n => (n.text || '').trim() && !cur.some(c => c.text === n.text))
+      .map(n => ({ id: uid(), text: n.text, color: n.color || 'yellow', done: !!n.done }));
+    if(add.length) store.set('stickies', { notes: [...cur, ...add] });
+    if(old.length && !items.some(i => i.type === 'stickies')) old[0].type = 'stickies';
+    items = items.filter(i => i.type !== 'sticky');
+    items.forEach(i => { if(types[i.type] && types[i.type].doc) delete i.state; });
+    try { localStorage.setItem(MKEY, '1'); } catch(e){}
+  }
 
   window.Toolbox = Toolbox;
 })();

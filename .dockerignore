@@ -1,8 +1,8 @@
 # 許可リスト方式: いったん全部除いてから、イメージに要るものだけを戻す
 # css/・js/ は中身を丸ごと戻す（画像やサブフォルダを足しても NAS 版だけ 404 にならないように）
 **
+!server.py
 !index.html
 !css/**
 !js/**
-!docker/nginx.conf
 **/.DS_Store
