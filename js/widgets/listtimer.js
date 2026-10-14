@@ -12,7 +12,7 @@
       root.classList.add('lt-body');
       const C = 2*Math.PI*80;
       root.innerHTML = `
-        <div data-list-view style="display:flex;flex-direction:column;flex:1;min-height:0">
+        <div class="lt-view" data-list-view>
           <div class="lt-tabs">${UNITS.map(u=>`<button class="lt-tab" data-u="${u}">${u}分単位</button>`).join('')}</div>
           <div class="lt-list" data-list></div>
         </div>

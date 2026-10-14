@@ -95,7 +95,8 @@
     const PERM = { granted:'許可済み', denied:'ブロック中', default:'未設定' };
     const refresh = () => {
       test.disabled = !box.checked;
-      status.textContent = supported ? 'ブラウザの通知許可: ' + PERM[Notification.permission] : '';
+      // On an insecure page the browser reports "denied", which would wrongly suggest unblocking it in site settings.
+      status.textContent = supported && window.isSecureContext ? 'ブラウザの通知許可: ' + PERM[Notification.permission] : '';
     };
     refresh();
     $('#toggle-settings').addEventListener('click', refresh);
