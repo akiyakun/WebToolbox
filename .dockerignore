@@ -1,0 +1,10 @@
+# 許可リスト方式: いったん全部除いてから、イメージに要るものだけを戻す
+**
+!index.html
+!css/
+!css/*.css
+!js/
+!js/*.js
+!js/widgets/
+!js/widgets/*.js
+!docker/nginx.conf

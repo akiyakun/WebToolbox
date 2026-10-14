@@ -88,6 +88,8 @@
     const say = t => { msg.textContent = t; msg.hidden = !t; };
     const supported = 'Notification' in window;
     if(!supported){ settings.notify = false; box.disabled = true; say('このブラウザではデスクトップ通知が使えません。'); }
+    // Browsers only allow notifications on HTTPS or localhost (e.g. not on http://<NAS IP>).
+    else if(!window.isSecureContext){ settings.notify = false; box.disabled = true; say('デスクトップ通知は HTTPS か localhost で開いたときだけ使えます。'); }
     else if(settings.notify && Notification.permission === 'denied'){ settings.notify = false; }
     box.checked = !!settings.notify;
     const PERM = { granted:'許可済み', denied:'ブロック中', default:'未設定' };

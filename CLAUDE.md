@@ -1,3 +1,12 @@
+# Project Instructions
+
+Read and follow `AGENTS.md` in the project root.
+
+Project-wide rules, conventions, and shared instructions are defined there.
+
+When working in a subdirectory, also check for any additional `AGENTS.md` files that apply to that area.
+
+
 # WebToolbox 制作ルール
 
 ブラウザでサッと使える小物ツール集。ビルド不要の素の HTML / CSS / JavaScript で作る。
@@ -8,6 +17,7 @@
 - `css/style.css` … 全スタイル（色・サイズはここの `:root` 変数を使う）
 - `js/core.js` … ウィジェット登録・ボード配置・設定（通知 / UIスケール / 整列・全削除）
 - `js/widgets/*.js` … ツール本体。1ツール1ファイル（幅違いの同じツールは1ファイルで複数 `register` する。例: `memo.js`）
+- `Dockerfile` / `docker-compose.yaml` / `docker/nginx.conf` … NAS で動かすためのもの（`docs/docker.md`）
 
 ## ツールの追加方法
 
@@ -89,6 +99,12 @@ Toolbox.register({
 - `python3 -m http.server 8765` で起動し `http://localhost:8765` で確認する（通知は `file://` だと動かない場合がある）
 - サーバーはキャッシュが効くので、変更が反映されないときは `Cmd + Shift + R`
 - 色々なUIスケール（50% / 85% / 100% / 150%）で崩れないか確認する
+
+## NAS（Docker）
+
+- 手順は `docs/docker.md`。nginx で静的ファイルを配るだけ（ポート 8000）。サーバーに状態は持たない
+- 新しいフォルダやファイルの種類を足したら `.dockerignore`（許可リスト方式）と `Dockerfile` の COPY にも足す
+- NAS 版は `http://` なのでデスクトップ通知は使えない（HTTPS か localhost だけ）。通知まわりを変えたら、通知が使えないときの表示も確認する
 
 ## Git
 

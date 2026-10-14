@@ -1,6 +1,6 @@
 # WebToolbox
 
-ブラウザでサッと使える小物ツール集。ビルド不要、`index.html` を開くだけ（または `python3 -m http.server`）。
+ブラウザでサッと使える小物ツール集。ビルド不要、`index.html` を開くだけ（または `python3 -m http.server`）。NAS の Docker でも動かせる（[docs/docker.md](docs/docker.md)）。
 
 - ウィジェットをボード上に自由配置（ドラッグ移動・位置は localStorage に自動保存）
 - 収録ツール: タイマー / ストップウォッチ / ListTimer（一覧からタップで即スタート、終了時刻つき） / メモ帳（1列幅・2列幅）
