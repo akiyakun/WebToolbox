@@ -8,7 +8,7 @@
     python3 server.py --host 0.0.0.0 --port 8000 --data /data   # コンテナの中
 
 API:
-    GET /api/docs?after=<rev>   rev が after より新しい中身だけを返す {"rev": 最新, "docs": {種類: {"rev", "data"}}}
+    GET /api/docs?after=<rev>   rev が after より新しい中身だけを返す {"epoch", "rev": 最新, "docs": {種類: {"rev", "data"}}}
     PUT /api/docs/<種類>        {"data": ...} を保存して {"rev": 新しい rev} を返す（後から保存したほうが残る）
 """
 
@@ -20,6 +20,7 @@ import re
 import shutil
 import threading
 import time
+import uuid
 from email.utils import formatdate, parsedate_to_datetime
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -32,6 +33,7 @@ PUBLIC_DIRS = ("css", "js")
 
 DOC_NAME = re.compile(r"^[a-z0-9_-]{1,32}$")
 MAX_BODY = 1024 * 1024          # 1つの中身の上限（1MB）
+MAX_DOCS = 32                   # 中身の種類の数の上限（ログインがないので、NAS の容量をいっぱいにされないように）
 BACKUP_EVERY = 60 * 60          # 上書きする前の中身を、1時間に1回まで残す
 BACKUP_KEEP = 72                # 種類ごとに残す数
 
@@ -66,13 +68,31 @@ class Store:
             except (OSError, ValueError, KeyError, TypeError) as e:
                 print(f"読み込めない中身を飛ばしました: {name} ({e})", flush=True)
         self.rev = max((d["rev"] for d in self.docs.values()), default=0)
+        # データの世代の印。docs/ を消して作り直すと変わるので、ブラウザは手元の番号を捨てて全部取り直す
+        epoch_path = os.path.join(self.docs_dir, "epoch")
+        try:
+            with open(epoch_path, encoding="utf-8") as f:
+                self.epoch = f.read().strip()
+        except FileNotFoundError:
+            self.epoch = ""
+        if not self.epoch:
+            self.epoch = uuid.uuid4().hex
+            with open(epoch_path, "w", encoding="utf-8") as f:
+                f.write(self.epoch + "\n")
 
     def changed_after(self, after):
         with self.lock:
             return self.rev, {k: d for k, d in self.docs.items() if d["rev"] > after}
 
+    def info(self, after):
+        rev, docs = self.changed_after(after)
+        return {"epoch": self.epoch, "rev": rev, "docs": docs}
+
     def put(self, name, data):
+        """保存して新しい rev を返す。種類が多すぎて新しく作れないときは None"""
         with self.lock:
+            if name not in self.docs and len(self.docs) >= MAX_DOCS:
+                return None
             path = os.path.join(self.docs_dir, name + ".json")
             self._backup(name, path)
             self.rev += 1
@@ -93,7 +113,8 @@ class Store:
         backups = sorted(f for f in os.listdir(folder) if f.endswith(".json"))
         if backups and time.time() - os.path.getmtime(os.path.join(folder, backups[-1])) < BACKUP_EVERY:
             return
-        shutil.copy2(path, os.path.join(folder, time.strftime("%Y%m%d-%H%M%S") + ".json"))
+        # copyfile（copy2 ではない）: 控えの更新時刻を「控えを取った時刻」にする。上の 1 時間の判定に使う
+        shutil.copyfile(path, os.path.join(folder, time.strftime("%Y%m%d-%H%M%S") + ".json"))
         for old in backups[:max(0, len(backups) + 1 - BACKUP_KEEP)]:
             os.remove(os.path.join(folder, old))
 
@@ -153,8 +174,7 @@ class Handler(BaseHTTPRequestHandler):
                 after = int(parse_qs(url.query).get("after", ["0"])[0])
             except ValueError:
                 after = 0
-            rev, docs = self.store.changed_after(after)
-            return self.send_json(HTTPStatus.OK, {"rev": rev, "docs": docs})
+            return self.send_json(HTTPStatus.OK, self.store.info(after))
         self.send_static(url.path)
 
     def send_static(self, path):
@@ -197,22 +217,27 @@ class Handler(BaseHTTPRequestHandler):
 
     # ---- PUT ----
 
+    def reject(self, status, error):
+        """本文を読まずに断る。読み残した本文が次の要求の頭として読まれないように、接続を閉じる"""
+        self.close_connection = True
+        self.send(status, json.dumps({"error": error}).encode("utf-8"), "application/json; charset=utf-8",
+                  {"Connection": "close"})
+
     def do_PUT(self):
         url = urlsplit(self.path)
         m = re.fullmatch(r"/api/docs/([^/]+)", url.path)
         if not self.host_ok() or not self.same_origin():
-            return self.send_json(HTTPStatus.FORBIDDEN, {"error": "forbidden"})
+            return self.reject(HTTPStatus.FORBIDDEN, "forbidden")
         if not m or not DOC_NAME.match(m.group(1)):
-            return self.send_json(HTTPStatus.NOT_FOUND, {"error": "not found"})
+            return self.reject(HTTPStatus.NOT_FOUND, "not found")
         if not (self.headers.get("Content-Type") or "").startswith("application/json"):
-            return self.send_json(HTTPStatus.UNSUPPORTED_MEDIA_TYPE, {"error": "json only"})
+            return self.reject(HTTPStatus.UNSUPPORTED_MEDIA_TYPE, "json only")
         try:
             length = int(self.headers.get("Content-Length") or 0)
         except ValueError:
             length = -1
         if length < 0 or length > MAX_BODY:
-            self.close_connection = True
-            return self.send_json(HTTPStatus.REQUEST_ENTITY_TOO_LARGE, {"error": "too large"})
+            return self.reject(HTTPStatus.REQUEST_ENTITY_TOO_LARGE, "too large")
         try:
             body = json.loads(self.rfile.read(length).decode("utf-8"))
             data = body["data"]
@@ -223,6 +248,9 @@ class Handler(BaseHTTPRequestHandler):
         except OSError as e:
             print(f"保存できませんでした: {m.group(1)} ({e})", flush=True)
             return self.send_json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": "save failed"})
+        if rev is None:
+            print(f"中身の種類が上限（{MAX_DOCS}）に達したため、保存しませんでした: {m.group(1)}", flush=True)
+            return self.send_json(HTTPStatus.INSUFFICIENT_STORAGE, {"error": "too many docs"})
         self.send_json(HTTPStatus.OK, {"rev": rev})
 
 

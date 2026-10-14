@@ -1,9 +1,9 @@
-## Language
+## 言語
 
-- Always communicate with the user in Japanese.
-- Explanations, questions, progress updates, and summaries must be written in Japanese.
-- Keep code, identifiers, commands, file names, and quoted error messages in their original language when appropriate.
-- Even if source files, tool outputs, logs, or documentation are written in English, continue communicating with the user in Japanese.
+- ユーザーとのコミュニケーションは、常に日本語で行ってください。
+- 説明、質問、進捗報告、要約は、すべて日本語で記述してください。
+- コード、識別子、コマンド、ファイル名、引用したエラーメッセージなどは、必要に応じて元の言語のまま保持してください。
+- ソースファイル、ツールの出力、ログ、ドキュメントなどが英語で書かれている場合でも、ユーザーとのコミュニケーションは引き続き日本語で行ってください。
 
 
 # WebToolbox 制作ルール

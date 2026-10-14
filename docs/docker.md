@@ -24,7 +24,7 @@ WebToolbox を UGREEN NAS の Docker で動かし、家の中の LAN のブラ�
 | --- | --- |
 | `server.py` | 画面のファイルを配り、中身を保存する（API は下の「API」）。配るのは `index.html`・`css/`・`js/` だけ |
 | `Dockerfile` | Python 3.12（標準ライブラリだけなので `pip install` はない）。`server.py` を `0.0.0.0:8000` で動かし、中身は `/data` に保存する |
-| `docker-compose.yaml` | 安全設定（読み取り専用のコンテナ、権限を全部外す、など）は cloud-drive-sync と同じ。つなぐのは `/data` だけ |
+| `docker-compose.yaml` | 読み取り専用のコンテナ・権限を全部外す・プロセス数とメモリの上限などの安全設定。つなぐのは `/data` だけ |
 | `.env.example` | 動かすユーザーとつなぐ場所の見本。`.env` にコピーして使う（git に入れない） |
 | `.dockerignore` | 許可リスト方式。イメージに入れるのは `server.py`・`index.html`・`css/`・`js/` だけ |
 
@@ -38,8 +38,6 @@ WebToolbox を UGREEN NAS の Docker で動かし、家の中の LAN のブラ�
 - 画面のファイルには CSP（読み込むのは自分のファイルだけ・ほかのサイトに埋め込ませない）を付ける。`Cache-Control: no-cache` なので、更新したらリロードだけで反映される
 
 ## NAS の共有フォルダのアクセス権（UGREEN の ACL）
-
-cloud-drive-sync・view-logger で分かったことと同じ。
 
 - UGREEN の共有フォルダには、ふだん見える権限（`ls` の `drwxrwxrwx`）とは別に **UGREEN 独自のアクセス権**が付いていて、こちらが優先される
 - そのため、**UGOS に登録されていない UID（Dockerfile の既定の 10001 など）は、共有フォルダを読み書きできない**。コンテナは UGOS で作ったユーザーで動かす
@@ -110,6 +108,7 @@ sudo docker compose logs
 - 同じ種類のメモ帳を何個も置いていたら、区切り線（`――――――――`）を入れて 1 つにまとめる
 - 付箋は、付箋ボードの中の 1 枚ずつになる（空の付箋は移さない）
 - 2 台目のブラウザで開いたときは、NAS にある中身の後ろに足す（同じ文章はもう一度足さない）
+- 移すのは NAS の中身を読めてから（つながらないあいだは、ブラウザに取っておいて、つながったときに移す）
 
 ## ふだんの操作
 
@@ -133,12 +132,16 @@ sudo docker compose logs
 4. 控えの `rev` を、`docs/` の中のどのファイルの `rev` よりも大きい番号に書き換える（小さいままだと、開いているブラウザが取り込まない）
 5. `sudo docker compose start` で動かし、ブラウザをリロードする
 
+### 中身を全部消したいとき
+
+各ツールの中で消す（メモ帳の文字を消す、付箋を削除する）。`docs/` を消すだけだと、開いたことのあるブラウザが手元に残っている中身を送り直す（NAS の中身が消えても失われないようにするため）。
+
 ## API
 
 | | |
 | --- | --- |
 | `GET /api/docs?after=<rev>` | `rev` が `after` より新しい中身だけを返す。`{"rev": 最新の rev, "docs": {"memo": {"rev": 3, "data": {...}}}}` |
-| `PUT /api/docs/<種類>` | `{"data": ...}` を保存して `{"rev": 新しい rev}` を返す。`Content-Type: application/json` だけ。1 つ 1MB まで |
+| `PUT /api/docs/<種類>` | `{"data": ...}` を保存して `{"rev": 新しい rev}` を返す。`Content-Type: application/json` だけ。1 つ 1MB まで。種類は 32 個まで（超えると 507） |
 | `GET /healthz` | 死活確認（ホスト名を問わず `ok`） |
 
 `rev` は全体で増え続ける番号。種類の名前は英小文字・数字・`-`・`_`（32 文字まで）。

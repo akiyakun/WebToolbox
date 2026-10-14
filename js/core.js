@@ -44,7 +44,7 @@
       store.onStatus(showSyncStatus);
       await store.connect();
       try { items = JSON.parse(localStorage.getItem(KEY)) || []; } catch(e){ items = []; }
-      migrate();
+      migrateLayout();
       const placed = new Set();
       items = items.filter(i => types[i.type] && !(types[i.type].doc && placed.has(i.type)) && placed.add(i.type));
       topZ = items.reduce((m,i)=>Math.max(m,i.z||1),1);
@@ -57,6 +57,7 @@
         const item = items.find(i => i.type === type);
         if(item) reload(item, data);
       });
+      store.onReady(migrateContents);
       const popups = [['#palette','#toggle-palette'], ['#settings','#toggle-settings']];
       popups.forEach(([p, b]) => $(b).onclick = () => {
         const el = $(p), open = el.hidden;
@@ -72,9 +73,11 @@
       $('#tidy').onclick = tidy;
       $('#clear').onclick = () => {
         if(!items.length) return;
-        const kept = items.some(i => types[i.type].doc) ? '\nメモ帳・付箋の中身は残ります。' : '';
-        const warn = items.some(i => closeWarning(i.id)) ? '\n入力済みの内容も削除されます。' : '';
-        if(confirm('すべてのツールを閉じますか？' + kept + warn)) [...items].forEach(i => remove(i.id));
+        const lines = ['すべてのツールを閉じますか？'];
+        if(items.some(i => types[i.type].doc)) lines.push('メモ帳・付箋の中身は残ります。');
+        // Tools without a doc may still lose something when closed (they warn through closeWarning).
+        if(items.some(i => closeWarning(i.id))) lines.push('閉じると消える内容があるツールもあります。');
+        if(confirm(lines.join('\n'))) [...items].forEach(i => remove(i.id));
       };
       document.addEventListener('keydown', e => {
         if(e.key !== 'Escape') return;
@@ -422,28 +425,45 @@
   function refreshEmpty(){ $('#empty').hidden = items.length > 0; }
 
   /* ---- one-time move from the old board (before doc tools) ----
-     Memos and sticky notes used to live in each widget's state and could be placed many times. Their text is
-     added to the shared doc (skipping text it already has, e.g. moved from another browser), the first memo of
-     each width stays on the board, and the first sticky note becomes the stickies board. */
-  function migrate(){
-    const MKEY = 'webtoolbox.migrated.v2';
-    try { if(localStorage.getItem(MKEY)) return; } catch(e){ return; }
-    const SEP = '\n\n――――――――\n\n';
-    ['memo', 'memo2'].forEach(type => {
-      const texts = items.filter(i => i.type === type).map(i => ((i.state && i.state.text) || '').trim()).filter(Boolean);
-      const cur = ((store.get(type) || {}).text || '').trim();
-      const add = texts.filter(t => !cur.includes(t));
-      if(add.length) store.set(type, { text: [cur, ...add].filter(Boolean).join(SEP) });
-    });
-    const old = items.filter(i => i.type === 'sticky');
-    const cur = (store.get('stickies') || {}).notes || [];
-    const add = old.map(i => i.state || {}).filter(n => (n.text || '').trim() && !cur.some(c => c.text === n.text))
-      .map(n => ({ id: uid(), text: n.text, color: n.color || 'yellow', done: !!n.done }));
-    if(add.length) store.set('stickies', { notes: [...cur, ...add] });
-    if(old.length && !items.some(i => i.type === 'stickies')) old[0].type = 'stickies';
+     Memos and sticky notes used to live in each widget's state and could be placed many times.
+     The layout is converted right away: the first memo of each width stays on the board and the first sticky
+     note becomes the stickies board. Their text is kept aside (PENDING) and added to the shared docs only once
+     the server's contents are known, so nothing there is overwritten and text it already has is skipped. */
+  const PENDING = 'webtoolbox.migrate.v2', SEP = '\n\n――――――――\n\n';
+  function migrateLayout(){
+    const old = items.filter(i => ['memo', 'memo2', 'sticky'].includes(i.type) && i.state);
+    if(old.length){
+      try {
+        const pending = JSON.parse(localStorage.getItem(PENDING)) || [];
+        pending.push(...old.map(i => ({ ...i.state, type: i.type })));
+        localStorage.setItem(PENDING, JSON.stringify(pending));
+      } catch(e){ return; } // could not keep it aside: leave the old board as it is
+    }
+    const stickies = items.filter(i => i.type === 'sticky');
+    if(stickies.length && !items.some(i => i.type === 'stickies')) stickies[0].type = 'stickies';
     items = items.filter(i => i.type !== 'sticky');
     items.forEach(i => { if(types[i.type] && types[i.type].doc) delete i.state; });
-    try { localStorage.setItem(MKEY, '1'); } catch(e){}
+  }
+  function migrateContents(){
+    let pending = null;
+    try { pending = JSON.parse(localStorage.getItem(PENDING)); } catch(e){}
+    if(!Array.isArray(pending) || !pending.length) return;
+    const texts = type => pending.filter(p => p.type === type).map(p => String(p.text || '').trim()).filter(Boolean);
+    // A memo is skipped when the doc already has exactly that text as one of its sections.
+    ['memo', 'memo2'].forEach(type => {
+      const cur = String((store.get(type) || {}).text || '').trim();
+      const blocks = cur ? cur.split(SEP).map(b => b.trim()) : [], add = [];
+      texts(type).forEach(t => { if(!blocks.includes(t) && !add.includes(t)) add.push(t); });
+      if(add.length) store.set(type, { text: [cur, ...add].filter(Boolean).join(SEP) });
+    });
+    const notes = [...((store.get('stickies') || {}).notes || [])], before = notes.length;
+    pending.filter(p => p.type === 'sticky').forEach(p => {
+      const text = String(p.text || '');
+      if(text.trim() && !notes.some(n => n.text === text)) notes.push({ id: uid(), text, color: p.color || 'yellow', done: !!p.done });
+    });
+    if(notes.length !== before) store.set('stickies', { notes });
+    try { localStorage.removeItem(PENDING); } catch(e){}
+    items.forEach(i => { if(types[i.type].doc && live[i.id]) reload(i, store.get(i.type) || {}); });
   }
 
   window.Toolbox = Toolbox;

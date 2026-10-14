@@ -53,9 +53,18 @@
         find(n.id).scrollIntoView({ block: 'nearest' });
         focusNote(n.id);
       }
-      function remove(n){
-        if(!n.done && n.text.trim() && !confirm('この付箋はまだチェックされていません。\n削除しますか？')) return;
+      function remove(id){
+        const n = notes.find(x => x.id === id);
+        if(!n || (!n.done && n.text.trim() && !confirm('この付箋はまだチェックされていません。\n削除しますか？'))) return;
         notes = notes.filter(x => x !== n); render(); save();
+      }
+      // The note may have been replaced by load() since the menu opened, so look it up again by id.
+      function setColor(id, key){
+        const n = notes.find(x => x.id === id), el = find(id);
+        if(!n) return;
+        n.color = key;
+        if(el) el.style.setProperty('--sticky', colorOf(key));
+        save();
       }
 
       root.querySelector('.sn-add').onclick = addNote;
@@ -66,8 +75,8 @@
           const sections = [];
           if(n){
             sections.push(COLORS.map(c => ({ label: c.label, swatch: c.value, active: c.key === n.color,
-              action: () => { n.color = c.key; el.style.setProperty('--sticky', c.value); save(); } })));
-            sections.push([{ label: 'この付箋を削除', danger: true, action: () => remove(n) }]);
+              action: () => setColor(n.id, c.key) })));
+            sections.push([{ label: 'この付箋を削除', danger: true, action: () => remove(n.id) }]);
           }
           const more = [{ label: '付箋を追加', action: addNote }];
           if(notes.some(x => x.done)) more.push({ label: 'チェック済みをすべて削除', action: () => { notes = notes.filter(x => !x.done); render(); save(); } });

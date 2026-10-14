@@ -7,19 +7,28 @@
   const POLL_MS = 4000, PUSH_DELAY = 600, RETRY_MS = 5000;
 
   // docs: type -> data, revs: type -> server rev we last saw, dirty: types with unsaved local edits,
-  // rev: newest server rev we have seen, server: true once this origin has answered /api/docs.
-  let s = { docs: {}, revs: {}, dirty: [], rev: 0, server: false };
+  // rev: newest server rev we have seen, epoch: the server's data generation (changes when its data is
+  // recreated), server: true once this origin has answered /api/docs.
+  let s = { docs: {}, revs: {}, dirty: [], rev: 0, epoch: '', server: false };
   try { s = { ...s, ...JSON.parse(localStorage.getItem(KEY)) }; } catch(e){}
-  let online = true, pushTimer = null, pollTimer = null, pushing = false;
-  const listeners = [], statusListeners = [];
+  let online = true, pushTimer = null, pushing = false;
+  // ready: we know the server's current contents (or that there is no server). Until then a local change
+  // could not be merged with what is on the server, so onReady callbacks wait for it.
+  let ready = false;
+  const listeners = [], statusListeners = [], readyFns = [];
+  const markReady = () => { if(ready) return; ready = true; readyFns.splice(0).forEach(f => f()); };
   const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch(e){} };
   const isDirty = t => s.dirty.includes(t);
   const setStatus = on => { if(online !== on){ online = on; statusListeners.forEach(f => f(status())); } };
   const status = () => ({ server: s.server, online, unsaved: s.dirty.length > 0 });
 
+  // noApi: this origin does not have the API at all (a plain static server answers 404, or HTML instead of JSON).
+  // Any other failure (no answer, 502 from a proxy while the container restarts, …) means the server is down.
   async function api(path, opts){
     const r = await fetch(path, { cache: 'no-store', ...opts });
-    if(!r.ok) throw Object.assign(new Error('HTTP ' + r.status), { status: r.status });
+    const json = (r.headers.get('Content-Type') || '').startsWith('application/json');
+    if(r.status === 404 || (r.ok && !json)) throw Object.assign(new Error('no API'), { noApi: true });
+    if(!r.ok) throw new Error('HTTP ' + r.status);
     return r.json();
   }
 
@@ -27,9 +36,11 @@
   // next), and an answer older than what we already have (a poll that crossed our save) is ignored.
   // On the first fetch, edits left over from last time lose to anything saved on the server since then:
   // that save is newer (or it is our own, sent while the tab was closing).
+  // Returns true when the server's data was recreated or its numbers went back (restored from a backup):
+  // our numbers are then meaningless, so they are forgotten and the caller fetches everything again.
   function apply(res, first){
-    // The server's numbers went back (its data was reset or restored from a backup): forget ours.
-    if((res.rev || 0) < s.rev){ s.rev = 0; s.revs = {}; }
+    const reset = res.epoch !== s.epoch || (res.rev || 0) < s.rev;
+    if(reset){ s.rev = 0; s.revs = {}; s.epoch = res.epoch; }
     Object.entries(res.docs || {}).forEach(([t, d]) => {
       if(d.rev <= (s.revs[t] || 0)) return;
       if(isDirty(t)){ if(!first) return; s.dirty = s.dirty.filter(x => x !== t); }
@@ -40,16 +51,29 @@
     });
     s.rev = Math.max(s.rev, res.rev || 0);
     persist();
+    return reset;
+  }
+
+  // After a reset, documents we still have but the server lost (its data folder was recreated) are sent back
+  // rather than dropped. `res` must be a full answer (after=0).
+  function restoreMissing(res){
+    Object.keys(s.docs).forEach(t => { if(!(t in (res.docs || {})) && !isDirty(t)) s.dirty.push(t); });
+    persist(); push();
   }
 
   async function poll(){
     if(!s.server) return;
     try {
-      const after = s.rev, res = await api('api/docs?after=' + after);
-      apply(res);
+      const after = s.rev;
       // After a reset only part of the documents came back; fetch them all.
-      if(res.rev < after) apply(await api('api/docs?after=0'));
+      const res = await api('api/docs?after=' + after);
+      if(apply(res)){
+        const all = after > 0 ? await api('api/docs?after=0') : res;
+        if(all !== res) apply(all);
+        restoreMissing(all);
+      }
       setStatus(true);
+      markReady();
     }
     catch(e){ setStatus(false); }
   }
@@ -94,6 +118,8 @@
 
     // Called with (type, data) when another device changed a document.
     onChange(fn){ listeners.push(fn); },
+    // Runs fn once the server's contents are known (right away when they already are).
+    onReady(fn){ ready ? fn() : readyFns.push(fn); },
     onStatus(fn){ statusListeners.push(fn); fn(status()); },
     status,
 
@@ -101,20 +127,20 @@
     // (at the latest after `timeout` ms), so the board can start even when the server is slow or down.
     connect(timeout = 3000){
       const first = (async () => {
-        if(location.protocol === 'file:') return;
+        if(location.protocol === 'file:'){ s.server = false; markReady(); return; }
         try {
           const res = await api('api/docs?after=0');
           s.server = true; setStatus(true);
-          apply(res, true);
+          if(apply(res, true)) restoreMissing(res);
+          markReady();
           push();
         } catch(e){
-          // 404 etc.: a plain static server, so keep everything in this browser.
-          // No answer at all: the server we used before is down; keep the edits and retry later.
-          if(e.status) { s.server = false; s.dirty = []; persist(); }
-          else if(s.server) setStatus(false);
+          // No API here: keep everything in this browser. Otherwise the server is down; keep the edits,
+          // show the warning and retry (the first poll that gets through makes the store ready).
+          if(e.noApi){ s.server = false; s.dirty = []; persist(); markReady(); return; }
+          s.server = true; persist(); setStatus(false);
         }
-        if(!s.server) return;
-        pollTimer = setInterval(() => { if(!document.hidden) poll(); }, POLL_MS);
+        setInterval(() => { if(!document.hidden) poll(); }, POLL_MS);
         const now = () => { if(!document.hidden){ poll(); push(); } };
         document.addEventListener('visibilitychange', now);
         window.addEventListener('focus', now);

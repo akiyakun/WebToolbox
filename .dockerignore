@@ -5,4 +5,5 @@
 !index.html
 !css/**
 !js/**
-**/.DS_Store
+# 隠しファイル（.DS_Store や、NAS の共有で一時的にできる .smbdelete… など）は入れない
+**/.*
